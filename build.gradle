@@ -1,4 +1,4 @@
-group 'tech.macil.minecraft'
+group 'tech.macil.minecraft.codefoo'
 version '1.0-SNAPSHOT'
 
 apply plugin: 'java'

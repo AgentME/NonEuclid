@@ -1,0 +1,3 @@
+name: CodeFoo
+main: tech.macil.minecraft.codefoo.CodeFooPlugin
+version: "${internalVersion}"
