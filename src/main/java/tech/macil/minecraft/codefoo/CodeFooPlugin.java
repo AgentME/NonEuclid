@@ -41,7 +41,7 @@ public class CodeFooPlugin extends JavaPlugin implements Listener {
         menuInventory.setItem(1, redstone);
     }
 
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     public void onInteract(PlayerInteractEvent event) {
         Player player = event.getPlayer();
         Block block = event.getClickedBlock();
