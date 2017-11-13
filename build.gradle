@@ -1,3 +1,5 @@
+import org.ajoberstar.grgit.Grgit
+
 group 'tech.macil.minecraft.codefoo'
 version '1.0-SNAPSHOT'
 
@@ -13,4 +15,39 @@ repositories {
 dependencies {
     compile 'org.bukkit:bukkit:1.12.2-R0.1-SNAPSHOT'
     testCompile group: 'junit', name: 'junit', version: '4.12'
+}
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath 'org.ajoberstar:gradle-git:1.6.0'
+    }
+}
+
+if (!project.hasProperty("gitCommitHash") && !JavaVersion.current().isJava6()) {
+    try {
+        def repo = Grgit.open(dir: '.')
+        ext.gitCommitHash = repo.head().abbreviatedId
+    } catch (Exception e) {
+        println "Error getting commit hash: " + e.getMessage()
+    }
+}
+if (!project.hasProperty("gitCommitHash")) {
+    ext.gitCommitHash = "no_git_id"
+}
+
+ext.internalVersion = version + ";" + gitCommitHash
+
+processResources {
+    from (sourceSets.main.resources.srcDirs) {
+        expand 'internalVersion': project.internalVersion
+        include 'plugin.yml'
+    }
+
+    from (sourceSets.main.resources.srcDirs) {
+        exclude 'plugin.yml'
+    }
 }
