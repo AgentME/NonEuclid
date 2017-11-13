@@ -66,11 +66,15 @@ public class CodeFooPlugin extends JavaPlugin implements Listener {
 
         int slot = event.getRawSlot();
         if (slot == 0) {
-            event.getWhoClicked().closeInventory();
-            event.getWhoClicked().sendMessage("You got booped!");
+            getServer().getScheduler().scheduleSyncDelayedTask(this, () -> {
+                event.getWhoClicked().closeInventory();
+                event.getWhoClicked().sendMessage("You got booped!");
+            });
         } else if (slot == 1) {
-            event.getWhoClicked().closeInventory();
-            event.getWhoClicked().sendMessage("You got more booped!");
+            getServer().getScheduler().scheduleSyncDelayedTask(this, () -> {
+                event.getWhoClicked().closeInventory();
+                event.getWhoClicked().sendMessage("You got more booped!");
+            });
         }
     }
 }
