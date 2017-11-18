@@ -18,7 +18,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
 
 public class NonEuclidPlugin extends JavaPlugin implements Listener {
     public enum Mode {
@@ -27,8 +26,8 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
     }
 
     private World mainWorld;
-    private List<Location> CONFIG_A;
-    private List<Location> CONFIG_B;
+    private List<Location> SETUP_A;
+    private List<Location> SETUP_B;
     private Map<Player, Mode> playerModes;
     private static final Mode DEFAULT_MODE = Mode.A;
     private static final double CENTER_X = 29;
@@ -45,22 +44,22 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
         mainWorld = getServer().getWorld("world");
         CENTER_LOC = new Location(mainWorld, CENTER_X, CENTER_FLOOR, CENTER_Z);
         playerModes = new HashMap<>();
-        CONFIG_A = new ArrayList<>();
-        for (double x : new double[]{CENTER_X - HALL_WIDTH/2 - 1, CENTER_X + HALL_WIDTH/2}) {
-            for (double y = CENTER_FLOOR; y < CENTER_FLOOR+HALL_HEIGHT; y++) {
-                for (double z = CENTER_Z - HALL_WIDTH/2; z < CENTER_Z+HALL_WIDTH/2; z++) {
-                    CONFIG_A.add(new Location(
+        SETUP_A = new ArrayList<>();
+        for (double x : new double[]{CENTER_X - HALL_WIDTH / 2 - 1, CENTER_X + HALL_WIDTH / 2}) {
+            for (double y = CENTER_FLOOR; y < CENTER_FLOOR + HALL_HEIGHT; y++) {
+                for (double z = CENTER_Z - HALL_WIDTH / 2; z < CENTER_Z + HALL_WIDTH / 2; z++) {
+                    SETUP_A.add(new Location(
                             mainWorld, Location.locToBlock(x),
                             Location.locToBlock(y), Location.locToBlock(z)
                     ));
                 }
             }
         }
-        CONFIG_B = new ArrayList<>();
-        for (double z : new double[]{CENTER_Z - HALL_WIDTH/2 - 1, CENTER_Z + HALL_WIDTH/2}) {
-            for (double y = CENTER_FLOOR; y < CENTER_FLOOR+HALL_HEIGHT; y++) {
-                for (double x = CENTER_X - HALL_WIDTH/2; x < CENTER_X+HALL_WIDTH/2; x++) {
-                    CONFIG_B.add(new Location(
+        SETUP_B = new ArrayList<>();
+        for (double z : new double[]{CENTER_Z - HALL_WIDTH / 2 - 1, CENTER_Z + HALL_WIDTH / 2}) {
+            for (double y = CENTER_FLOOR; y < CENTER_FLOOR + HALL_HEIGHT; y++) {
+                for (double x = CENTER_X - HALL_WIDTH / 2; x < CENTER_X + HALL_WIDTH / 2; x++) {
+                    SETUP_B.add(new Location(
                             mainWorld, Location.locToBlock(x),
                             Location.locToBlock(y), Location.locToBlock(z)
                     ));
@@ -76,7 +75,7 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
     @Override
     public void onDisable() {
         List<Block> blocks = new ArrayList<>();
-        for (Location loc : Iterables.concat(CONFIG_A, CONFIG_B)) {
+        for (Location loc : Iterables.concat(SETUP_A, SETUP_B)) {
             blocks.add(loc.getBlock());
         }
         Location loc = new Location(null, 0, 0, 0);
@@ -115,7 +114,7 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
         }
 
         List<Block> realBlocks = new ArrayList<>();
-        for (Location loc : newMode == Mode.B ? CONFIG_A : CONFIG_B) {
+        for (Location loc : newMode == Mode.B ? SETUP_A : SETUP_B) {
             realBlocks.add(loc.getBlock());
         }
         Location mloc = new Location(null, 0, 0, 0);
@@ -123,7 +122,7 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
             block.getLocation(mloc);
             player.sendBlockChange(mloc, block.getType(), block.getData());
         }
-        for (Location loc : newMode == Mode.A ? CONFIG_A : CONFIG_B) {
+        for (Location loc : newMode == Mode.A ? SETUP_A : SETUP_B) {
             player.sendBlockChange(loc, CONFIG_WALL, (byte) 0);
         }
         playerModes.put(player, newMode);
@@ -138,9 +137,12 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
     public void onPlayerLogin(PlayerLoginEvent event) {
         // Render the fake blocks in the next frame because any sent now
         // get overridden by the real chunk.
-        getServer().getScheduler().scheduleSyncDelayedTask(this, () ->
-            setupPlayer(event.getPlayer())
-        );
+        Player player = event.getPlayer();
+        getServer().getScheduler().scheduleSyncDelayedTask(this, () -> {
+            if (player.isOnline()) {
+                setupPlayer(player);
+            }
+        });
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
@@ -157,7 +159,7 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
             return null;
         }
         boolean a1 = loc.getZ() > loc.getX() + CENTER_Z - CENTER_X;
-        boolean a2 = loc.getZ() > - loc.getX() + CENTER_Z + CENTER_X;
+        boolean a2 = loc.getZ() > -loc.getX() + CENTER_Z + CENTER_X;
         return a1 == a2 ? Mode.A : Mode.B;
     }
 }
