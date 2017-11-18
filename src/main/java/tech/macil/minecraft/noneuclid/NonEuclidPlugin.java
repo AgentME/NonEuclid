@@ -29,9 +29,9 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
     private List<Location> CONFIG_A;
     private List<Location> CONFIG_B;
     private Map<Player, Mode> playerModes;
-    private static final double CENTER_X = -14;
-    private static final double CENTER_Z = 217;
-    private static final double CENTER_FLOOR = 65;
+    private static final double CENTER_X = 29;
+    private static final double CENTER_Z = 221;
+    private static final double CENTER_FLOOR = 64;
     private static final double HALL_HEIGHT = 3;
     private static final double HALL_WIDTH = 2;
     private static final double FORGET_DISTANCE_SQUARED = Math.pow(100, 2);
