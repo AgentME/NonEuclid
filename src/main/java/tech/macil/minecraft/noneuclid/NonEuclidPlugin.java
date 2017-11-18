@@ -1,80 +1,144 @@
 package tech.macil.minecraft.noneuclid;
 
-import org.bukkit.ChatColor;
+import com.google.common.collect.Iterables;
+import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.Action;
-import org.bukkit.event.inventory.InventoryClickEvent;
-import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.inventory.EquipmentSlot;
-import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.logging.Level;
+
 public class NonEuclidPlugin extends JavaPlugin implements Listener {
-    private Inventory menuInventory;
+    public enum Mode {
+        A,
+        B
+    }
+
+    private World mainWorld;
+    private List<Location> CONFIG_A;
+    private List<Location> CONFIG_B;
+    private Map<Player, Mode> playerModes;
+    private static final double CENTER_X = -14;
+    private static final double CENTER_Z = 217;
+    private static final double CENTER_FLOOR = 65;
+    private static final double HALL_HEIGHT = 3;
+    private static final double HALL_WIDTH = 2;
+    private static final double FORGET_DISTANCE_SQUARED = Math.pow(100, 2);
+    private Location CENTER_LOC;
+    private static final Material CONFIG_WALL = Material.STONE;
 
     @Override
     public void onEnable() {
+        mainWorld = getServer().getWorld("world");
+        CENTER_LOC = new Location(mainWorld, CENTER_X, CENTER_FLOOR, CENTER_Z);
+        playerModes = new HashMap<>();
+        CONFIG_A = new ArrayList<>();
+        for (double x : new double[]{CENTER_X - HALL_WIDTH/2 - 1, CENTER_X + HALL_WIDTH/2}) {
+            for (double y = CENTER_FLOOR; y < CENTER_FLOOR+HALL_HEIGHT; y++) {
+                for (double z = CENTER_Z - HALL_WIDTH/2; z < CENTER_Z+HALL_WIDTH/2; z++) {
+                    CONFIG_A.add(new Location(
+                            mainWorld, Location.locToBlock(x),
+                            Location.locToBlock(y), Location.locToBlock(z)
+                    ));
+                }
+            }
+        }
+        CONFIG_B = new ArrayList<>();
+        for (double z : new double[]{CENTER_Z - HALL_WIDTH/2 - 1, CENTER_Z + HALL_WIDTH/2}) {
+            for (double y = CENTER_FLOOR; y < CENTER_FLOOR+HALL_HEIGHT; y++) {
+                for (double x = CENTER_X - HALL_WIDTH/2; x < CENTER_X+HALL_WIDTH/2; x++) {
+                    CONFIG_B.add(new Location(
+                            mainWorld, Location.locToBlock(x),
+                            Location.locToBlock(y), Location.locToBlock(z)
+                    ));
+                }
+            }
+        }
         getServer().getPluginManager().registerEvents(this, this);
-
-        ItemStack lapis = new ItemStack(Material.LAPIS_BLOCK, 1);
-        {
-            ItemMeta meta = lapis.getItemMeta();
-            meta.setDisplayName(ChatColor.YELLOW + "Boop");
-            lapis.setItemMeta(meta);
-        }
-
-        ItemStack redstone = new ItemStack(Material.REDSTONE_BLOCK, 1);
-        {
-            ItemMeta meta = redstone.getItemMeta();
-            meta.setDisplayName(ChatColor.YELLOW + "More boop");
-            redstone.setItemMeta(meta);
-        }
-
-        menuInventory = getServer().createInventory(null, 36, "Foo!");
-        menuInventory.setItem(0, lapis);
-        menuInventory.setItem(1, redstone);
     }
 
-    @EventHandler(ignoreCancelled = true)
-    public void onInteract(PlayerInteractEvent event) {
+    @Override
+    public void onDisable() {
+        List<Block> blocks = new ArrayList<>();
+        for (Location loc : Iterables.concat(CONFIG_A, CONFIG_B)) {
+            blocks.add(loc.getBlock());
+        }
+        Location loc = new Location(null, 0, 0, 0);
+        for (Player player : getServer().getOnlinePlayers()) {
+            if (player.getWorld() != mainWorld) {
+                continue;
+            }
+            for (Block block : blocks) {
+                block.getLocation(loc);
+                player.sendBlockChange(loc, block.getType(), block.getData());
+            }
+        }
+        playerModes = null;
+    }
+
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
+    public void onPlayerMove(PlayerMoveEvent event) {
         Player player = event.getPlayer();
-        Block block = event.getClickedBlock();
-        if (player.isSneaking() ||
-                block == null ||
-                block.getType() != Material.IRON_BLOCK ||
-                event.getAction() != Action.RIGHT_CLICK_BLOCK ||
-                event.getHand() != EquipmentSlot.HAND
-                ) {
+        if (player.getWorld() != mainWorld) {
+            playerModes.remove(player);
             return;
         }
-        event.setCancelled(true);
-        event.getPlayer().openInventory(menuInventory);
+        Location playerLoc = player.getLocation();
+        if (CENTER_LOC.distanceSquared(playerLoc) > FORGET_DISTANCE_SQUARED) {
+            playerModes.remove(player);
+            return;
+        }
+        Mode newMode = getModeForLocation(playerLoc);
+        if (newMode == null) {
+            return;
+        }
+        Mode currentMode = playerModes.get(player);
+        if (currentMode == newMode) {
+            return;
+        }
+
+        List<Block> realBlocks = new ArrayList<>();
+        for (Location loc : newMode == Mode.B ? CONFIG_A : CONFIG_B) {
+            realBlocks.add(loc.getBlock());
+        }
+        Location mloc = new Location(null, 0, 0, 0);
+        for (Block block : realBlocks) {
+            block.getLocation(mloc);
+            player.sendBlockChange(mloc, block.getType(), block.getData());
+        }
+        for (Location loc : newMode == Mode.A ? CONFIG_A : CONFIG_B) {
+            player.sendBlockChange(loc, CONFIG_WALL, (byte) 0);
+        }
+        getLogger().log(Level.INFO, "Set player to new mode: " + newMode);
+        playerModes.put(player, newMode);
     }
 
-    @EventHandler
-    public void onInventoryClick(InventoryClickEvent event) {
-        if (!menuInventory.equals(event.getInventory())) {
-            return;
-        }
-        event.setCancelled(true);
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onPlayerQuit(PlayerQuitEvent event) {
+        playerModes.remove(event.getPlayer());
+    }
 
-        int slot = event.getRawSlot();
-        if (slot == 0) {
-            getServer().getScheduler().scheduleSyncDelayedTask(this, () -> {
-                event.getWhoClicked().closeInventory();
-                event.getWhoClicked().sendMessage("You got booped!");
-            });
-        } else if (slot == 1) {
-            getServer().getScheduler().scheduleSyncDelayedTask(this, () -> {
-                event.getWhoClicked().closeInventory();
-                event.getWhoClicked().sendMessage("You got more booped!");
-            });
+    private Mode getModeForLocation(Location loc) {
+        assert loc.getWorld() == mainWorld;
+        if (
+                Math.abs(loc.getX() - CENTER_X) < HALL_WIDTH &&
+                        Math.abs(loc.getZ() - CENTER_Z) < HALL_WIDTH
+                ) {
+            return null;
         }
+        boolean a1 = loc.getZ() > loc.getX() + CENTER_Z - CENTER_X;
+        boolean a2 = loc.getZ() > - loc.getX() + CENTER_Z + CENTER_X;
+        return a1 == a2 ? Mode.A : Mode.B;
     }
 }
