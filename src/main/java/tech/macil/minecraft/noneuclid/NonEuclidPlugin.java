@@ -60,6 +60,12 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
                 getLogger().log(Level.SEVERE, "Error parsing config locations." + entry.getKey(), e);
             }
         }
+
+        if (setups.size() == 0) {
+            // Don't register event listeners if nothing is configured to be used.
+            return;
+        }
+
         for (Player player : getServer().getOnlinePlayers()) {
             renderForPlayer(player);
         }
