@@ -1,3 +1,4 @@
+max_distance: 128
 locations:
   my_cool_spot:
     disabled: true
@@ -18,3 +19,4 @@ locations:
 #    wall_height: 1
 #    material: SMOOTH_BRICK
 #    default_path: EastWest
+#    max_distance: 15

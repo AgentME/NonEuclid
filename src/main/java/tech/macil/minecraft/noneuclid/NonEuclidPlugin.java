@@ -29,6 +29,7 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
 
         setups = new ArrayList<>();
         allSetupBlockLocations = new HashSet<>();
+        int defaultMaxDistance = getConfig().getInt("max_distance");
         Map<String, Object> configLocations = getConfig().getConfigurationSection("locations").getValues(false);
         for (Map.Entry<String, Object> entry : configLocations.entrySet()) {
             Object locationConfig = entry.getValue();
@@ -50,9 +51,10 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
                 int height = locationSection.getInt("wall_height", 3);
                 Material material = Material.valueOf(locationSection.getString("material", "STONE"));
                 Setup.Path defaultPath = Setup.Path.valueOf(locationSection.getString("default_path", "NorthSouth"));
+                int maxDistance = locationSection.getInt("max_distance", defaultMaxDistance);
 
                 Location loc = new Location(world, x, y, z);
-                Setup setup = new Setup(loc, width, height, material, defaultPath);
+                Setup setup = new Setup(loc, width, height, material, defaultPath, maxDistance);
                 setups.add(setup);
                 allSetupBlockLocations.addAll(setup.getNorthSouthLocations());
                 allSetupBlockLocations.addAll(setup.getEastWestLocations());

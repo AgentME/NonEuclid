@@ -10,8 +10,6 @@ import java.util.List;
 import java.util.Map;
 
 public class Setup {
-    private static final double FORGET_DISTANCE_SQUARED = Math.pow(128, 2);
-
     public enum Path {
         NorthSouth,
         EastWest
@@ -24,12 +22,14 @@ public class Setup {
     private final List<Location> northSouthLocations;
     private final List<Location> eastWestLocations;
     private final Map<Player, Path> currentPlayerPaths = new HashMap<>();
+    private final double maxDistanceSquared;
 
-    public Setup(Location center, int width, int height, Material material, Path defaultPath) {
+    public Setup(Location center, int width, int height, Material material, Path defaultPath, int maxDistance) {
         this.center = center;
         this.width = width;
         this.material = material;
         this.defaultPath = defaultPath;
+        this.maxDistanceSquared = Math.pow(maxDistance, 2);
 
         northSouthLocations = new ArrayList<>();
         for (double x : new double[]{center.getX() - (double) width / 2 - 1, center.getX() + (double) width / 2}) {
@@ -81,7 +81,7 @@ public class Setup {
 
     public boolean isLocationClose(Location loc) {
         return loc.getWorld() == center.getWorld() &&
-                center.distanceSquared(loc) < FORGET_DISTANCE_SQUARED;
+                center.distanceSquared(loc) < maxDistanceSquared;
     }
 
     public Path getPathForLocation(Location loc) {
