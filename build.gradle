@@ -1,7 +1,6 @@
 import org.ajoberstar.grgit.Grgit
 
 group 'tech.macil.minecraft.codefoo'
-version '1.0-SNAPSHOT'
 
 apply plugin: 'java'
 
