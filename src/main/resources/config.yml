@@ -1,0 +1,20 @@
+locations:
+  my_cool_spot:
+    disabled: true
+    world: world
+    x: 29
+    y: 64
+    z: 221
+    wall_width: 2
+    wall_height: 3
+    material: STONE
+    default_path: NorthSouth
+#  my_other_spot:
+#    world: world
+#    x: 40
+#    y: 64
+#    z: 230
+#    wall_width: 3
+#    wall_height: 1
+#    material: SMOOTH_BRICK
+#    default_path: EastWest
