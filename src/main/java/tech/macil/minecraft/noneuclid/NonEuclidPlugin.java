@@ -1,6 +1,5 @@
 package tech.macil.minecraft.noneuclid;
 
-import com.google.common.collect.Iterables;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -9,15 +8,14 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
+import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class NonEuclidPlugin extends JavaPlugin implements Listener {
     public enum Mode {
@@ -28,6 +26,7 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
     private World mainWorld;
     private List<Location> SETUP_A;
     private List<Location> SETUP_B;
+    private Set<Location> BOTH_SETUPS;
     private Map<Player, Mode> playerModes;
     private static final Mode DEFAULT_MODE = Mode.A;
     private static final double CENTER_X = 29;
@@ -66,6 +65,9 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
                 }
             }
         }
+        BOTH_SETUPS = new HashSet<>();
+        BOTH_SETUPS.addAll(SETUP_A);
+        BOTH_SETUPS.addAll(SETUP_B);
         for (Player player : getServer().getOnlinePlayers()) {
             setupPlayer(player);
         }
@@ -74,8 +76,8 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
 
     @Override
     public void onDisable() {
-        List<Block> blocks = new ArrayList<>();
-        for (Location loc : Iterables.concat(SETUP_A, SETUP_B)) {
+        List<Block> blocks = new ArrayList<>(BOTH_SETUPS.size());
+        for (Location loc : BOTH_SETUPS) {
             blocks.add(loc.getBlock());
         }
         Location loc = new Location(null, 0, 0, 0);
@@ -92,12 +94,12 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
     }
 
     private void setupPlayer(Player player) {
-        if (player.getWorld() != mainWorld) {
-            playerModes.remove(player);
-            return;
-        }
+        setupPlayer(player, false);
+    }
+
+    private void setupPlayer(Player player, boolean forceRender) {
         Location playerLoc = player.getLocation();
-        if (CENTER_LOC.distanceSquared(playerLoc) > FORGET_DISTANCE_SQUARED) {
+        if (!locationIsClose(playerLoc)) {
             playerModes.remove(player);
             return;
         }
@@ -107,9 +109,13 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
             if (currentMode == null) {
                 newMode = DEFAULT_MODE;
             } else {
-                return;
+                if (!forceRender) {
+                    return;
+                } else {
+                    newMode = currentMode;
+                }
             }
-        } else if (currentMode == newMode) {
+        } else if (currentMode == newMode && !forceRender) {
             return;
         }
 
@@ -140,7 +146,7 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
         Player player = event.getPlayer();
         getServer().getScheduler().scheduleSyncDelayedTask(this, () -> {
             if (player.isOnline()) {
-                setupPlayer(player);
+                setupPlayer(player, true);
             }
         });
     }
@@ -148,6 +154,11 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     public void onPlayerQuit(PlayerQuitEvent event) {
         playerModes.remove(event.getPlayer());
+    }
+
+    private boolean locationIsClose(Location loc) {
+        return loc.getWorld() == mainWorld &&
+                CENTER_LOC.distanceSquared(loc) < FORGET_DISTANCE_SQUARED;
     }
 
     private Mode getModeForLocation(Location loc) {
@@ -161,5 +172,25 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
         boolean a1 = loc.getZ() > loc.getX() + CENTER_Z - CENTER_X;
         boolean a2 = loc.getZ() > -loc.getX() + CENTER_Z + CENTER_X;
         return a1 == a2 ? Mode.A : Mode.B;
+    }
+
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
+    public void onPlayerInteract(PlayerInteractEvent event) {
+        Player player = event.getPlayer();
+        if (event.getAction() != Action.LEFT_CLICK_BLOCK) {
+            return;
+        }
+        Location playerLoc = player.getLocation();
+        if (!locationIsClose(playerLoc)) {
+            return;
+        }
+        Location clickedLoc = event.getClickedBlock().getLocation();
+        if (BOTH_SETUPS.contains(clickedLoc)) {
+            getServer().getScheduler().scheduleSyncDelayedTask(this, () -> {
+                if (player.isOnline()) {
+                    setupPlayer(player, true);
+                }
+            });
+        }
     }
 }
