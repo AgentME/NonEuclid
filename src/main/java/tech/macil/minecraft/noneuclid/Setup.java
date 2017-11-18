@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 public class Setup {
-    private static final double FORGET_DISTANCE_SQUARED = Math.pow(160, 2);
+    private static final double FORGET_DISTANCE_SQUARED = Math.pow(128, 2);
 
     public enum Path {
         NorthSouth,
