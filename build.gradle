@@ -26,7 +26,7 @@ buildscript {
     }
 }
 
-if (!project.hasProperty("gitCommitHash") && !JavaVersion.current().isJava6()) {
+if (!project.hasProperty("gitCommitHash")) {
     try {
         def repo = Grgit.open(dir: '.')
         ext.gitCommitHash = repo.head().abbreviatedId
@@ -41,6 +41,8 @@ if (!project.hasProperty("gitCommitHash")) {
 ext.internalVersion = version + ";" + gitCommitHash
 
 processResources {
+    inputs.property("version", project.internalVersion)
+
     from (sourceSets.main.resources.srcDirs) {
         expand 'internalVersion': project.internalVersion
         include 'plugin.yml'
