@@ -9,6 +9,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -29,6 +30,7 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
     private List<Location> CONFIG_A;
     private List<Location> CONFIG_B;
     private Map<Player, Mode> playerModes;
+    private static final Mode DEFAULT_MODE = Mode.A;
     private static final double CENTER_X = 29;
     private static final double CENTER_Z = 221;
     private static final double CENTER_FLOOR = 64;
@@ -65,6 +67,9 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
                 }
             }
         }
+        for (Player player : getServer().getOnlinePlayers()) {
+            setupPlayer(player);
+        }
         getServer().getPluginManager().registerEvents(this, this);
     }
 
@@ -87,9 +92,7 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
         playerModes = null;
     }
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
-    public void onPlayerMove(PlayerMoveEvent event) {
-        Player player = event.getPlayer();
+    private void setupPlayer(Player player) {
         if (player.getWorld() != mainWorld) {
             playerModes.remove(player);
             return;
@@ -99,12 +102,15 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
             playerModes.remove(player);
             return;
         }
+        Mode currentMode = playerModes.get(player);
         Mode newMode = getModeForLocation(playerLoc);
         if (newMode == null) {
-            return;
-        }
-        Mode currentMode = playerModes.get(player);
-        if (currentMode == newMode) {
+            if (currentMode == null) {
+                newMode = DEFAULT_MODE;
+            } else {
+                return;
+            }
+        } else if (currentMode == newMode) {
             return;
         }
 
@@ -120,8 +126,21 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
         for (Location loc : newMode == Mode.A ? CONFIG_A : CONFIG_B) {
             player.sendBlockChange(loc, CONFIG_WALL, (byte) 0);
         }
-        getLogger().log(Level.INFO, "Set player to new mode: " + newMode);
         playerModes.put(player, newMode);
+    }
+
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
+    public void onPlayerMove(PlayerMoveEvent event) {
+        setupPlayer(event.getPlayer());
+    }
+
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
+    public void onPlayerLogin(PlayerLoginEvent event) {
+        // Render the fake blocks in the next frame because any sent now
+        // get overridden by the real chunk.
+        getServer().getScheduler().scheduleSyncDelayedTask(this, () ->
+            setupPlayer(event.getPlayer())
+        );
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
