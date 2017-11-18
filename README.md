@@ -1,5 +1,7 @@
 # NonEuclid
 
+[![Circle CI](https://circleci.com/gh/AgentME/NonEuclid.svg?style=shield)](https://circleci.com/gh/AgentME/NonEuclid)
+
 This is a Bukkit plugin for Minecraft servers that allows overlapping pathways
 to be configured.
 
