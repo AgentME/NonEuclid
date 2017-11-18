@@ -3,7 +3,9 @@
 This is a Bukkit plugin for Minecraft servers that allows overlapping pathways
 to be configured.
 
-[![Click for a higher-quality short video](extra/noneuclid.gif)](extra/noneuclid.webm)
+[![Demonstration video](extra/noneuclid.gif)](https://raw.githubusercontent.com/AgentME/NonEuclid/master/extra/noneuclid.webm)
+
+*Click for a higher-quality video clip*
 
 Clients treat the wall blocks as real, but to the server the walls are only
 illusionary. They are never saved to the world file. The walls displayed by
