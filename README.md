@@ -38,7 +38,7 @@ will never see the change, and will never see the backside of either.
 ## Installing
 
 Download the latest jar file from the
-[Project's Releases page](https://github.com/AgentME/NonEuclid/releases).
+[project's Releases page](https://github.com/AgentME/NonEuclid/releases).
 Place the jar file in the plugins/ directory. After the first run, the file
 plugins/NonEuclid/config.yml file will be generated with default values.
 
