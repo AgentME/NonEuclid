@@ -1,6 +1,6 @@
 import org.ajoberstar.grgit.Grgit
 
-group 'tech.macil.minecraft.codefoo'
+group 'tech.macil.minecraft.noneuclid'
 
 apply plugin: 'java'
 apply plugin: 'net.researchgate.release'

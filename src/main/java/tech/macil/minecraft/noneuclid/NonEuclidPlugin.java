@@ -1,4 +1,4 @@
-package tech.macil.minecraft.codefoo;
+package tech.macil.minecraft.noneuclid;
 
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -15,7 +15,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 
-public class CodeFooPlugin extends JavaPlugin implements Listener {
+public class NonEuclidPlugin extends JavaPlugin implements Listener {
     private Inventory menuInventory;
 
     @Override
