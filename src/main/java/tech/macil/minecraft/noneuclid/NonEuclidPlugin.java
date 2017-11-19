@@ -71,11 +71,11 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
             return;
         }
 
+        protocolManager = ProtocolLibrary.getProtocolManager();
         for (Player player : getServer().getOnlinePlayers()) {
             renderForPlayer(player);
         }
         getServer().getPluginManager().registerEvents(this, this);
-        protocolManager = ProtocolLibrary.getProtocolManager();
     }
 
     @Override
