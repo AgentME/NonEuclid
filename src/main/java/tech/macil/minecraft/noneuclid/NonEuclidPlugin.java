@@ -1,5 +1,7 @@
 package tech.macil.minecraft.noneuclid;
 
+import com.comphenix.protocol.ProtocolLibrary;
+import com.comphenix.protocol.ProtocolManager;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -22,6 +24,7 @@ import java.util.logging.Level;
 public class NonEuclidPlugin extends JavaPlugin implements Listener {
     private List<Setup> setups;
     private Set<Location> allSetupBlockLocations;
+    private ProtocolManager protocolManager;
 
     @Override
     public void onEnable() {
@@ -72,6 +75,7 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
             renderForPlayer(player);
         }
         getServer().getPluginManager().registerEvents(this, this);
+        protocolManager = ProtocolLibrary.getProtocolManager();
     }
 
     @Override

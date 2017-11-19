@@ -1,3 +1,4 @@
 name: NonEuclid
 main: tech.macil.minecraft.noneuclid.NonEuclidPlugin
 version: "${internalVersion}"
+depend: [ProtocolLib]
