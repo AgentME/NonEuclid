@@ -132,6 +132,7 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public void onDisable() {
         disablePacketRewriting = true;
         List<Block> blocks = new ArrayList<>(allSetupBlockLocations.size());
@@ -156,6 +157,7 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
         renderForPlayer(player, false);
     }
 
+    @SuppressWarnings("deprecation")
     private void renderForPlayer(Player player, boolean forceRender) {
         Location playerLoc = player.getLocation();
         for (Setup setup : setups) {
