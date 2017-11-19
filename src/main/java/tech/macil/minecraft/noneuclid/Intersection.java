@@ -4,12 +4,9 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
-public class Setup {
+public class Intersection {
     public enum Path {
         NorthSouth,
         EastWest
@@ -24,7 +21,7 @@ public class Setup {
     private final Map<Player, Path> currentPlayerPaths = new HashMap<>();
     private final double maxDistanceSquared;
 
-    public Setup(Location center, int width, int height, Material material, Path defaultPath, int maxDistance) {
+    public Intersection(Location center, int width, int height, Material material, Path defaultPath, int maxDistance) {
         this.center = center;
         this.width = width;
         this.material = material;

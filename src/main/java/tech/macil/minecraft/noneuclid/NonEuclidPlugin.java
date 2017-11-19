@@ -31,8 +31,8 @@ import java.util.logging.Level;
 import static com.comphenix.protocol.PacketType.Play.Server.BLOCK_CHANGE;
 
 public class NonEuclidPlugin extends JavaPlugin implements Listener {
-    private List<Setup> setups;
-    private Set<Location> allSetupBlockLocations;
+    private List<Intersection> intersections;
+    private Set<Location> allIntersectionBlockLocations;
     private ProtocolManager protocolManager;
 
     // turn this on when using player.sendBlockChange here
@@ -43,8 +43,8 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
         saveDefaultConfig();
 
         disablePacketRewriting = false;
-        setups = new ArrayList<>();
-        allSetupBlockLocations = new HashSet<>();
+        intersections = new ArrayList<>();
+        allIntersectionBlockLocations = new HashSet<>();
 
         int defaultMaxDistance = getConfig().getInt("max_distance");
         Map<String, Object> configLocations = getConfig().getConfigurationSection("locations").getValues(false);
@@ -67,20 +67,20 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
                 int width = locationSection.getInt("wall_width", 2);
                 int height = locationSection.getInt("wall_height", 3);
                 Material material = Material.valueOf(locationSection.getString("material", "STONE"));
-                Setup.Path defaultPath = Setup.Path.valueOf(locationSection.getString("default_path", "NorthSouth"));
+                Intersection.Path defaultPath = Intersection.Path.valueOf(locationSection.getString("default_path", "NorthSouth"));
                 int maxDistance = locationSection.getInt("max_distance", defaultMaxDistance);
 
                 Location loc = new Location(world, x, y, z);
-                Setup setup = new Setup(loc, width, height, material, defaultPath, maxDistance);
-                setups.add(setup);
-                allSetupBlockLocations.addAll(setup.getLocations(Setup.Path.NorthSouth));
-                allSetupBlockLocations.addAll(setup.getLocations(Setup.Path.EastWest));
+                Intersection intersection = new Intersection(loc, width, height, material, defaultPath, maxDistance);
+                intersections.add(intersection);
+                allIntersectionBlockLocations.addAll(intersection.getLocations(Intersection.Path.NorthSouth));
+                allIntersectionBlockLocations.addAll(intersection.getLocations(Intersection.Path.EastWest));
             } catch (Exception e) {
                 getLogger().log(Level.SEVERE, "Error parsing config locations." + entry.getKey(), e);
             }
         }
 
-        if (setups.size() == 0) {
+        if (intersections.size() == 0) {
             // Don't register event listeners if nothing is configured to be used.
             return;
         }
@@ -104,23 +104,23 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
                 if (type == BLOCK_CHANGE) {
                     BlockPosition position = packet.getBlockPositionModifier().read(0);
                     Location loc = position.toLocation(player.getWorld());
-                    if (allSetupBlockLocations.contains(loc)) {
+                    if (allIntersectionBlockLocations.contains(loc)) {
                         WrappedBlockData blockData = packet.getBlockData().read(0);
-                        for (Setup setup : setups) {
-                            if (blockData.getType() == setup.getMaterial()) {
+                        for (Intersection intersection : intersections) {
+                            if (blockData.getType() == intersection.getMaterial()) {
                                 continue;
                             }
-                            Map<Player, Setup.Path> currentPlayerPaths = setup.getCurrentPlayerPaths();
-                            Setup.Path path = currentPlayerPaths.get(player);
+                            Map<Player, Intersection.Path> currentPlayerPaths = intersection.getCurrentPlayerPaths();
+                            Intersection.Path path = currentPlayerPaths.get(player);
                             if (path == null) {
                                 continue;
                             }
-                            if (setup.getLocations(path).contains(loc)) {
-                                packet.getBlockData().write(0, WrappedBlockData.createData(setup.getMaterial()));
+                            if (intersection.getLocations(path).contains(loc)) {
+                                packet.getBlockData().write(0, WrappedBlockData.createData(intersection.getMaterial()));
                                 break;
                             }
-                            if (setup.getOtherLocations(path).contains(loc)) {
-                                // Don't keep checking other setups. We know it's this
+                            if (intersection.getOtherLocations(path).contains(loc)) {
+                                // Don't keep checking other intersections. We know it's this
                                 // one, and we know we don't need to do anything.
                                 break;
                             }
@@ -135,8 +135,8 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
     @SuppressWarnings("deprecation")
     public void onDisable() {
         disablePacketRewriting = true;
-        List<Block> blocks = new ArrayList<>(allSetupBlockLocations.size());
-        for (Location loc : allSetupBlockLocations) {
+        List<Block> blocks = new ArrayList<>(allIntersectionBlockLocations.size());
+        for (Location loc : allIntersectionBlockLocations) {
             blocks.add(loc.getBlock());
         }
         final Location tLoc = new Location(null, 0, 0, 0);
@@ -149,8 +149,8 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
                 player.sendBlockChange(tLoc, block.getType(), block.getData());
             }
         }
-        setups = null;
-        allSetupBlockLocations = null;
+        intersections = null;
+        allIntersectionBlockLocations = null;
     }
 
     private void renderForPlayer(Player player) {
@@ -160,17 +160,17 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
     @SuppressWarnings("deprecation")
     private void renderForPlayer(Player player, boolean forceRender) {
         Location playerLoc = player.getLocation();
-        for (Setup setup : setups) {
-            Map<Player, Setup.Path> currentPlayerPaths = setup.getCurrentPlayerPaths();
-            if (!setup.isLocationClose(playerLoc)) {
+        for (Intersection intersection : intersections) {
+            Map<Player, Intersection.Path> currentPlayerPaths = intersection.getCurrentPlayerPaths();
+            if (!intersection.isLocationClose(playerLoc)) {
                 currentPlayerPaths.remove(player);
                 continue;
             }
-            Setup.Path currentPath = currentPlayerPaths.get(player);
-            Setup.Path newPath = setup.getPathForLocation(playerLoc);
+            Intersection.Path currentPath = currentPlayerPaths.get(player);
+            Intersection.Path newPath = intersection.getPathForLocation(playerLoc);
             if (newPath == null) {
                 if (currentPath == null) {
-                    newPath = setup.getDefaultPath();
+                    newPath = intersection.getDefaultPath();
                 } else {
                     if (!forceRender) {
                         continue;
@@ -185,7 +185,7 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
             currentPlayerPaths.put(player, newPath);
             disablePacketRewriting = true;
             List<Block> realBlocks = new ArrayList<>();
-            for (Location loc : setup.getOtherLocations(newPath)) {
+            for (Location loc : intersection.getOtherLocations(newPath)) {
                 realBlocks.add(loc.getBlock());
             }
             Location tLoc = new Location(null, 0, 0, 0);
@@ -193,8 +193,8 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
                 block.getLocation(tLoc);
                 player.sendBlockChange(tLoc, block.getType(), block.getData());
             }
-            for (Location loc : setup.getLocations(newPath)) {
-                player.sendBlockChange(loc, setup.getMaterial(), (byte) 0);
+            for (Location loc : intersection.getLocations(newPath)) {
+                player.sendBlockChange(loc, intersection.getMaterial(), (byte) 0);
             }
             disablePacketRewriting = false;
         }
@@ -219,8 +219,8 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onPlayerQuit(PlayerQuitEvent event) {
-        for (Setup setup : setups) {
-            setup.getCurrentPlayerPaths().remove(event.getPlayer());
+        for (Intersection intersection : intersections) {
+            intersection.getCurrentPlayerPaths().remove(event.getPlayer());
         }
     }
 
@@ -230,7 +230,7 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
             return;
         }
         Location clickedLoc = event.getClickedBlock().getLocation();
-        if (allSetupBlockLocations.contains(clickedLoc)) {
+        if (allIntersectionBlockLocations.contains(clickedLoc)) {
             Player player = event.getPlayer();
             getServer().getScheduler().scheduleSyncDelayedTask(this, () -> {
                 if (player.isOnline()) {
