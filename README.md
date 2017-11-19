@@ -37,7 +37,11 @@ will never see the change, and will never see the backside of either.
 
 ## Installing
 
-Download the latest jar file from the
+This plugin depends on
+[ProtocolLib](https://www.spigotmc.org/resources/protocollib.1997/). You must
+download its jar and place it in your plugins/ directory.
+
+Download the latest NonEuclid jar file from the
 [project's Releases page](https://github.com/AgentME/NonEuclid/releases).
 Place the jar file in the plugins/ directory. After the first run, the file
 plugins/NonEuclid/config.yml file will be generated with default values.
