@@ -1,7 +1,14 @@
 package tech.macil.minecraft.noneuclid;
 
+import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.ProtocolManager;
+import com.comphenix.protocol.events.ListenerPriority;
+import com.comphenix.protocol.events.PacketAdapter;
+import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.events.PacketEvent;
+import com.comphenix.protocol.wrappers.BlockPosition;
+import com.comphenix.protocol.wrappers.WrappedBlockData;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -21,17 +28,24 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.util.*;
 import java.util.logging.Level;
 
+import static com.comphenix.protocol.PacketType.Play.Server.BLOCK_CHANGE;
+
 public class NonEuclidPlugin extends JavaPlugin implements Listener {
     private List<Setup> setups;
     private Set<Location> allSetupBlockLocations;
     private ProtocolManager protocolManager;
 
+    // turn this on when using player.sendBlockChange here
+    private boolean disablePacketRewriting;
+
     @Override
     public void onEnable() {
         saveDefaultConfig();
 
+        disablePacketRewriting = false;
         setups = new ArrayList<>();
         allSetupBlockLocations = new HashSet<>();
+
         int defaultMaxDistance = getConfig().getInt("max_distance");
         Map<String, Object> configLocations = getConfig().getConfigurationSection("locations").getValues(false);
         for (Map.Entry<String, Object> entry : configLocations.entrySet()) {
@@ -59,8 +73,8 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
                 Location loc = new Location(world, x, y, z);
                 Setup setup = new Setup(loc, width, height, material, defaultPath, maxDistance);
                 setups.add(setup);
-                allSetupBlockLocations.addAll(setup.getNorthSouthLocations());
-                allSetupBlockLocations.addAll(setup.getEastWestLocations());
+                allSetupBlockLocations.addAll(setup.getLocations(Setup.Path.NorthSouth));
+                allSetupBlockLocations.addAll(setup.getLocations(Setup.Path.EastWest));
             } catch (Exception e) {
                 getLogger().log(Level.SEVERE, "Error parsing config locations." + entry.getKey(), e);
             }
@@ -76,10 +90,50 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
             renderForPlayer(player);
         }
         getServer().getPluginManager().registerEvents(this, this);
+        protocolManager.addPacketListener(new PacketAdapter(this,
+                ListenerPriority.HIGHEST,
+                BLOCK_CHANGE) {
+            @Override
+            public void onPacketSending(PacketEvent event) {
+                if (disablePacketRewriting) {
+                    return;
+                }
+                PacketContainer packet = event.getPacket();
+                Player player = event.getPlayer();
+                PacketType type = event.getPacketType();
+                if (type == BLOCK_CHANGE) {
+                    BlockPosition position = packet.getBlockPositionModifier().read(0);
+                    Location loc = position.toLocation(player.getWorld());
+                    if (allSetupBlockLocations.contains(loc)) {
+                        WrappedBlockData blockData = packet.getBlockData().read(0);
+                        for (Setup setup : setups) {
+                            if (blockData.getType() == setup.getMaterial()) {
+                                continue;
+                            }
+                            Map<Player, Setup.Path> currentPlayerPaths = setup.getCurrentPlayerPaths();
+                            Setup.Path path = currentPlayerPaths.get(player);
+                            if (path == null) {
+                                continue;
+                            }
+                            if (setup.getLocations(path).contains(loc)) {
+                                packet.getBlockData().write(0, WrappedBlockData.createData(setup.getMaterial()));
+                                break;
+                            }
+                            if (setup.getOtherLocations(path).contains(loc)) {
+                                // Don't keep checking other setups. We know it's this
+                                // one, and we know we don't need to do anything.
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        });
     }
 
     @Override
     public void onDisable() {
+        disablePacketRewriting = true;
         List<Block> blocks = new ArrayList<>(allSetupBlockLocations.size());
         for (Location loc : allSetupBlockLocations) {
             blocks.add(loc.getBlock());
@@ -126,8 +180,10 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
                 continue;
             }
 
+            currentPlayerPaths.put(player, newPath);
+            disablePacketRewriting = true;
             List<Block> realBlocks = new ArrayList<>();
-            for (Location loc : newPath == Setup.Path.EastWest ? setup.getNorthSouthLocations() : setup.getEastWestLocations()) {
+            for (Location loc : setup.getOtherLocations(newPath)) {
                 realBlocks.add(loc.getBlock());
             }
             Location tLoc = new Location(null, 0, 0, 0);
@@ -135,10 +191,10 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
                 block.getLocation(tLoc);
                 player.sendBlockChange(tLoc, block.getType(), block.getData());
             }
-            for (Location loc : newPath == Setup.Path.NorthSouth ? setup.getNorthSouthLocations() : setup.getEastWestLocations()) {
+            for (Location loc : setup.getLocations(newPath)) {
                 player.sendBlockChange(loc, setup.getMaterial(), (byte) 0);
             }
-            currentPlayerPaths.put(player, newPath);
+            disablePacketRewriting = false;
         }
     }
 

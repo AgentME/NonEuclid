@@ -67,12 +67,26 @@ public class Setup {
         return defaultPath;
     }
 
-    public List<Location> getNorthSouthLocations() {
-        return northSouthLocations;
+    public List<Location> getLocations(Path path) {
+        switch (path) {
+            case NorthSouth:
+                return northSouthLocations;
+            case EastWest:
+                return eastWestLocations;
+            default:
+                throw new RuntimeException("Invalid path value: " + path);
+        }
     }
 
-    public List<Location> getEastWestLocations() {
-        return eastWestLocations;
+    public List<Location> getOtherLocations(Path path) {
+        switch (path) {
+            case NorthSouth:
+                return eastWestLocations;
+            case EastWest:
+                return northSouthLocations;
+            default:
+                throw new RuntimeException("Invalid path value: " + path);
+        }
     }
 
     public Map<Player, Path> getCurrentPlayerPaths() {
