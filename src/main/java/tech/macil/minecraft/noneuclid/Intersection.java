@@ -113,8 +113,8 @@ public class Intersection {
     public Path getPathForLocation(Location loc) {
         assert loc.getWorld() == center.getWorld();
         if (
-                Math.abs(loc.getX() - center.getX()) <= width &&
-                        Math.abs(loc.getZ() - center.getZ()) <= width
+                Math.abs(loc.getX() - center.getX()) <= (double) width / 2 + 1 &&
+                        Math.abs(loc.getZ() - center.getZ()) <= (double) width / 2 + 1
                 ) {
             return null;
         }
