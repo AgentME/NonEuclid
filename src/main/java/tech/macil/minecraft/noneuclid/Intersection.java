@@ -19,6 +19,7 @@ public class Intersection {
     private final List<Location> northSouthLocations;
     private final List<Location> eastWestLocations;
     private final Map<Player, Path> currentPlayerPaths = new HashMap<>();
+    private final Set<Player> playersInIntersection = new HashSet<>();
     private final double maxDistanceSquared;
 
     public Intersection(Location center, int width, int height, Material material, Path defaultPath, int maxDistance) {
@@ -53,7 +54,7 @@ public class Intersection {
         }
     }
 
-    public static Location calculateAccurateCenter(Location loc, int width) {
+    static Location calculateAccurateCenter(Location loc, int width) {
         if (width % 2 == 0) {
             return new Location(
                     loc.getWorld(),
@@ -67,7 +68,7 @@ public class Intersection {
         }
     }
 
-    public Location getCenter() {
+    Location getCenter() {
         return center;
     }
 
@@ -105,17 +106,23 @@ public class Intersection {
         return currentPlayerPaths;
     }
 
+    public Set<Player> getPlayersInIntersection() {
+        return playersInIntersection;
+    }
+
     public boolean isLocationClose(Location loc) {
         return loc.getWorld() == center.getWorld() &&
                 center.distanceSquared(loc) < maxDistanceSquared;
     }
 
+    public boolean isInIntersection(Location loc) {
+        return Math.abs(loc.getX() - center.getX()) <= (double) width / 2 + 1 &&
+                Math.abs(loc.getZ() - center.getZ()) <= (double) width / 2 + 1;
+    }
+
     public Path getPathForLocation(Location loc) {
         assert loc.getWorld() == center.getWorld();
-        if (
-                Math.abs(loc.getX() - center.getX()) <= (double) width / 2 + 1 &&
-                        Math.abs(loc.getZ() - center.getZ()) <= (double) width / 2 + 1
-                ) {
+        if (isInIntersection(loc)) {
             return null;
         }
         boolean a1 = loc.getZ() > loc.getX() + center.getZ() - center.getX();

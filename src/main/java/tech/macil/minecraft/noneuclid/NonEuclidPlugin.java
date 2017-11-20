@@ -31,6 +31,7 @@ import java.util.logging.Level;
 import static com.comphenix.protocol.PacketType.Play.Server.BLOCK_CHANGE;
 
 public class NonEuclidPlugin extends JavaPlugin implements Listener {
+    private boolean useInvisibility;
     private List<Intersection> intersections;
     private Set<Location> allIntersectionBlockLocations;
     private ProtocolManager protocolManager;
@@ -45,6 +46,7 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
         disablePacketRewriting = false;
         intersections = new ArrayList<>();
         allIntersectionBlockLocations = new HashSet<>();
+        useInvisibility = getConfig().getBoolean("use_invisibility", true);
 
         int defaultMaxDistance = getConfig().getInt("max_distance");
         Map<String, Object> configLocations = getConfig().getConfigurationSection("locations").getValues(false);
@@ -149,6 +151,27 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
                 player.sendBlockChange(tLoc, block.getType(), block.getData());
             }
         }
+        if (useInvisibility) {
+            for (Intersection intersection : intersections) {
+                Map<Player, Intersection.Path> currentPlayerPaths = intersection.getCurrentPlayerPaths();
+
+                for (Player intersectionPlayer : intersection.getPlayersInIntersection()) {
+                    Intersection.Path intersectionPlayerPath = currentPlayerPaths.get(intersectionPlayer);
+                    assert intersectionPlayerPath != null;
+
+                    for (Map.Entry<Player, Intersection.Path> entry : currentPlayerPaths.entrySet()) {
+                        Player pathPlayer = entry.getKey();
+                        if (pathPlayer == intersectionPlayer) {
+                            continue;
+                        }
+                        Intersection.Path pathPlayerPath = entry.getValue();
+                        if (intersectionPlayerPath != pathPlayerPath) {
+                            pathPlayer.showPlayer(intersectionPlayer);
+                        }
+                    }
+                }
+            }
+        }
         intersections = null;
         allIntersectionBlockLocations = null;
     }
@@ -162,22 +185,32 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
         Location playerLoc = player.getLocation();
         for (Intersection intersection : intersections) {
             Map<Player, Intersection.Path> currentPlayerPaths = intersection.getCurrentPlayerPaths();
+            Set<Player> playersInIntersection = intersection.getPlayersInIntersection();
+
+            Intersection.Path oldPath = currentPlayerPaths.get(player);
+            Intersection.Path newPath;
             if (!intersection.isLocationClose(playerLoc)) {
-                currentPlayerPaths.remove(player);
-                continue;
-            }
-            Intersection.Path currentPath = currentPlayerPaths.get(player);
-            Intersection.Path newPath = intersection.getPathForLocation(playerLoc);
-            if (newPath == null) {
-                if (currentPath == null) {
-                    newPath = intersection.getDefaultPath();
-                } else {
-                    newPath = currentPath;
+                newPath = null;
+            } else {
+                newPath = intersection.getPathForLocation(playerLoc);
+                if (newPath == null) {
+                    if (oldPath == null) {
+                        newPath = intersection.getDefaultPath();
+                    } else {
+                        newPath = oldPath;
+                    }
                 }
             }
 
-            if (currentPath != newPath || forceRender) {
-                currentPlayerPaths.put(player, newPath);
+            if (oldPath != newPath) {
+                if (newPath == null) {
+                    currentPlayerPaths.remove(player);
+                } else {
+                    currentPlayerPaths.put(player, newPath);
+                }
+            }
+
+            if (newPath != null && (oldPath != newPath || forceRender)) {
                 disablePacketRewriting = true;
                 List<Block> realBlocks = new ArrayList<>();
                 for (Location loc : intersection.getOtherLocations(newPath)) {
@@ -192,6 +225,71 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
                     player.sendBlockChange(loc, intersection.getMaterial(), (byte) 0);
                 }
                 disablePacketRewriting = false;
+            }
+
+            boolean newInIntersection = newPath != null && intersection.isInIntersection(playerLoc);
+            boolean exitedIntersection = playersInIntersection.contains(player) && (
+                    oldPath != newPath || !newInIntersection
+            );
+            if (exitedIntersection) {
+                playersInIntersection.remove(player);
+                assert oldPath != null;
+            }
+            boolean enteredIntersection = newInIntersection && !playersInIntersection.contains(player);
+            if (enteredIntersection) {
+                playersInIntersection.add(player);
+            }
+
+            if (useInvisibility) {
+                if (exitedIntersection) {
+                    // Player should be revealed to everyone on the opposite path.
+                    for (Map.Entry<Player, Intersection.Path> entry : currentPlayerPaths.entrySet()) {
+                        Player pathPlayer = entry.getKey();
+                        if (player == pathPlayer) {
+                            continue;
+                        }
+                        Intersection.Path pathPlayerPath = entry.getValue();
+                        if (oldPath != pathPlayerPath) {
+                            pathPlayer.showPlayer(player);
+                        }
+                    }
+                }
+
+                if (oldPath != newPath) {
+                    for (Player intersectionPlayer : playersInIntersection) {
+                        if (player == intersectionPlayer) {
+                            continue;
+                        }
+                        Intersection.Path intersectionPlayerPath = currentPlayerPaths.get(intersectionPlayer);
+                        assert intersectionPlayerPath != null;
+
+                        // No one in the intersection who had been on the opposing path should be
+                        // hidden from player now.
+                        if (oldPath != null && oldPath != intersectionPlayerPath) {
+                            player.showPlayer(intersectionPlayer);
+                        }
+
+                        // Everyone in the intersection who is on the opposing path should be
+                        // hidden from player now.
+                        if (newPath != null && newPath != intersectionPlayerPath) {
+                            player.hidePlayer(intersectionPlayer);
+                        }
+                    }
+                }
+
+                if (enteredIntersection) {
+                    // Player should be hidden to everyone on the opposite path.
+                    for (Map.Entry<Player, Intersection.Path> entry : currentPlayerPaths.entrySet()) {
+                        Player pathPlayer = entry.getKey();
+                        if (player == pathPlayer) {
+                            continue;
+                        }
+                        Intersection.Path pathPlayerPath = entry.getValue();
+                        if (newPath != pathPlayerPath) {
+                            pathPlayer.hidePlayer(player);
+                        }
+                    }
+                }
             }
         }
     }
@@ -215,8 +313,10 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onPlayerQuit(PlayerQuitEvent event) {
+        Player player = event.getPlayer();
         for (Intersection intersection : intersections) {
-            intersection.getCurrentPlayerPaths().remove(event.getPlayer());
+            intersection.getCurrentPlayerPaths().remove(player);
+            intersection.getPlayersInIntersection().remove(player);
         }
     }
 

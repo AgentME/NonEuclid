@@ -55,6 +55,13 @@ You create an overlapping pathway by specifying the center of the intersection,
 and then the height, width, and material for the illusionary walls in the
 config.
 
+If you are using any invisibility plugins, then you should disable the
+`use_invisibility` setting so that NonEuclid doesn't ever override its effects
+and reveal players that shouldn't be revealed. However, disabling this setting
+means that a player will be able to see other players walk through walls when
+other players pass through an intersection in the opposite path than what the
+player sees.
+
 The config has a global `max_distance` setting, and individual locations may
 override it.
 

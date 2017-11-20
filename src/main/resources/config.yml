@@ -1,4 +1,10 @@
 max_distance: 128
+
+# If you use other invisibility-modifying plugins, then you may want to
+# disable this setting, or else NonEuclid may override its invisibility
+# settings.
+use_invisibility: true
+
 locations:
   my_cool_spot:
     disabled: true
