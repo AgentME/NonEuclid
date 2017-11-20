@@ -188,19 +188,7 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
             Set<Player> playersInIntersection = intersection.getPlayersInIntersection();
 
             Intersection.Path oldPath = currentPlayerPaths.get(player);
-            Intersection.Path newPath;
-            if (!intersection.isLocationClose(playerLoc)) {
-                newPath = null;
-            } else {
-                newPath = intersection.getPathForLocation(playerLoc);
-                if (newPath == null) {
-                    if (oldPath == null) {
-                        newPath = intersection.getDefaultPath();
-                    } else {
-                        newPath = oldPath;
-                    }
-                }
-            }
+            Intersection.Path newPath = intersection.getPathForLocation(playerLoc, oldPath);
 
             if (oldPath != newPath) {
                 if (newPath == null) {

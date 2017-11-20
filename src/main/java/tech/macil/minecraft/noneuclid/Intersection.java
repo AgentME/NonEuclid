@@ -110,7 +110,7 @@ public class Intersection {
         return playersInIntersection;
     }
 
-    public boolean isLocationClose(Location loc) {
+    boolean isLocationClose(Location loc) {
         return loc.getWorld() == center.getWorld() &&
                 center.distanceSquared(loc) < maxDistanceSquared;
     }
@@ -120,10 +120,13 @@ public class Intersection {
                 Math.abs(loc.getZ() - center.getZ()) <= (double) width / 2 + 1;
     }
 
-    public Path getPathForLocation(Location loc) {
+    public Path getPathForLocation(Location loc, Path previousPath) {
+        if (!isLocationClose(loc)) {
+            return null;
+        }
         assert loc.getWorld() == center.getWorld();
         if (isInIntersection(loc)) {
-            return null;
+            return previousPath == null ? getDefaultPath() : previousPath;
         }
         boolean a1 = loc.getZ() > loc.getX() + center.getZ() - center.getX();
         boolean a2 = loc.getZ() > -loc.getX() + center.getZ() + center.getX();
