@@ -22,6 +22,7 @@ public class Intersection {
     private final double maxDistanceSquared;
 
     public Intersection(Location center, int width, int height, Material material, Path defaultPath, int maxDistance) {
+        center = calculateAccurateCenter(center, width);
         this.center = center;
         this.width = width;
         this.material = material;
@@ -49,6 +50,20 @@ public class Intersection {
                     ));
                 }
             }
+        }
+    }
+
+    public static Location calculateAccurateCenter(Location loc, int width) {
+        if (width % 2 == 0) {
+            return new Location(
+                    loc.getWorld(),
+                    Math.round(loc.getX()), Math.round(loc.getY()), Math.round(loc.getZ())
+            );
+        } else {
+            return new Location(
+                    loc.getWorld(),
+                    Math.floor(loc.getX()) + 0.5, Math.round(loc.getY()), Math.floor(loc.getZ()) + 0.5
+            );
         }
     }
 

@@ -61,9 +61,9 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
                 }
 
                 World world = getServer().getWorld(locationSection.getString("world"));
-                long x = locationSection.getLong("x");
-                long y = locationSection.getLong("y");
-                long z = locationSection.getLong("z");
+                double x = locationSection.getDouble("x");
+                double y = locationSection.getDouble("y");
+                double z = locationSection.getDouble("z");
                 int width = locationSection.getInt("wall_width", 2);
                 int height = locationSection.getInt("wall_height", 3);
                 Material material = Material.valueOf(locationSection.getString("material", "STONE"));
