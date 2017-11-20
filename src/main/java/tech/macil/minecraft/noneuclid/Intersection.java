@@ -115,9 +115,13 @@ public class Intersection {
                 center.distanceSquared(loc) < maxDistanceSquared;
     }
 
-    public boolean isInIntersection(Location loc) {
-        return Math.abs(loc.getX() - center.getX()) <= (double) width / 2 + 1 &&
-                Math.abs(loc.getZ() - center.getZ()) <= (double) width / 2 + 1;
+    public boolean isInIntersection(Location loc, boolean includeWalls) {
+        double maxDistance = (double) width / 2;
+        if (includeWalls) {
+            maxDistance += 1;
+        }
+        return Math.abs(loc.getX() - center.getX()) <= maxDistance &&
+                Math.abs(loc.getZ() - center.getZ()) <= maxDistance;
     }
 
     public Path getPathForLocation(Location loc, Path previousPath) {
@@ -125,7 +129,10 @@ public class Intersection {
             return null;
         }
         assert loc.getWorld() == center.getWorld();
-        if (isInIntersection(loc)) {
+        // If we don't have a previous path, then don't consider the walls as
+        // part of the intersection, so that way players connecting will never
+        // be started inside of a wall.
+        if (isInIntersection(loc, previousPath != null)) {
             return previousPath == null ? getDefaultPath() : previousPath;
         }
         boolean a1 = loc.getZ() > loc.getX() + center.getZ() - center.getX();
