@@ -172,31 +172,27 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
                 if (currentPath == null) {
                     newPath = intersection.getDefaultPath();
                 } else {
-                    if (!forceRender) {
-                        continue;
-                    } else {
-                        newPath = currentPath;
-                    }
+                    newPath = currentPath;
                 }
-            } else if (currentPath == newPath && !forceRender) {
-                continue;
             }
 
-            currentPlayerPaths.put(player, newPath);
-            disablePacketRewriting = true;
-            List<Block> realBlocks = new ArrayList<>();
-            for (Location loc : intersection.getOtherLocations(newPath)) {
-                realBlocks.add(loc.getBlock());
+            if (currentPath != newPath || forceRender) {
+                currentPlayerPaths.put(player, newPath);
+                disablePacketRewriting = true;
+                List<Block> realBlocks = new ArrayList<>();
+                for (Location loc : intersection.getOtherLocations(newPath)) {
+                    realBlocks.add(loc.getBlock());
+                }
+                Location tLoc = new Location(null, 0, 0, 0);
+                for (Block block : realBlocks) {
+                    block.getLocation(tLoc);
+                    player.sendBlockChange(tLoc, block.getType(), block.getData());
+                }
+                for (Location loc : intersection.getLocations(newPath)) {
+                    player.sendBlockChange(loc, intersection.getMaterial(), (byte) 0);
+                }
+                disablePacketRewriting = false;
             }
-            Location tLoc = new Location(null, 0, 0, 0);
-            for (Block block : realBlocks) {
-                block.getLocation(tLoc);
-                player.sendBlockChange(tLoc, block.getType(), block.getData());
-            }
-            for (Location loc : intersection.getLocations(newPath)) {
-                player.sendBlockChange(loc, intersection.getMaterial(), (byte) 0);
-            }
-            disablePacketRewriting = false;
         }
     }
 
