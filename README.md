@@ -15,14 +15,17 @@ this plugin do not affect non-player entities. The walls may fail to block
 players from being pushed through them, or players may be able to walk through
 the walls if lag has delayed their appearance to the player, so don't expect
 this plugin to definitely keep players out of areas that you don't want them
-in.
+in. The plugin stops mobs from targeting players through the illusionary walls
+in certain cases, but they may still pathfind and walk through them.
 
 Here's a birds-eye diagram giving a barebones example of how an overlapping
 pathway works. The dots represent empty spots. P1 and P2 are two players.
 The center of the intersection is in the middle between the O and X characters.
 The P1 player will see walls where the X characters are. The P2 player will see
 walls where the O characters are. If P1 walks to P2's location, they will see
-the X walls disappear and the O walls appear.
+the X walls disappear and the O walls appear. If instead P1 walks directly into the center, crossing the O walls (that only P2 sees), then P1 will become
+invisible to P2 as long as P1 is inside of the intersection in the path
+opposite of what P2 sees.
 
     . . . P1. . .
     . . . . . . .
