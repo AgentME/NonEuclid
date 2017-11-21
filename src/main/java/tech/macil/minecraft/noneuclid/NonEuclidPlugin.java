@@ -8,7 +8,6 @@ import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.wrappers.BlockPosition;
-import com.comphenix.protocol.wrappers.WrappedBlockData;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -107,26 +106,7 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
                     BlockPosition position = packet.getBlockPositionModifier().read(0);
                     Location loc = position.toLocation(player.getWorld());
                     if (allIntersectionBlockLocations.contains(loc)) {
-                        WrappedBlockData blockData = packet.getBlockData().read(0);
-                        for (Intersection intersection : intersections) {
-                            if (blockData.getType() == intersection.getMaterial()) {
-                                continue;
-                            }
-                            Map<Player, Intersection.Path> currentPlayerPaths = intersection.getCurrentPlayerPaths();
-                            Intersection.Path path = currentPlayerPaths.get(player);
-                            if (path == null) {
-                                continue;
-                            }
-                            if (intersection.getLocations(path).contains(loc)) {
-                                packet.getBlockData().write(0, WrappedBlockData.createData(intersection.getMaterial()));
-                                break;
-                            }
-                            if (intersection.getOtherLocations(path).contains(loc)) {
-                                // Don't keep checking other intersections. We know it's this
-                                // one, and we know we don't need to do anything.
-                                break;
-                            }
-                        }
+                        event.setCancelled(true);
                     }
                 }
             }
