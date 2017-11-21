@@ -165,11 +165,12 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
                         }
                     }
                 } else if (type == MAP_CHUNK) {
-                    int chunkX = packet.getIntegers().read(0);
-                    int chunkZ = packet.getIntegers().read(1);
-                    ChunkCoordIntPair coord = new ChunkCoordIntPair(chunkX, chunkZ);
-                    if (allIntersectionBlockChunks.contains(coord)) {
-                        if (playersWithRerenderQueued.add(player)) {
+                    if (!playersWithRerenderQueued.contains(player)) {
+                        int chunkX = packet.getIntegers().read(0);
+                        int chunkZ = packet.getIntegers().read(1);
+                        ChunkCoordIntPair coord = new ChunkCoordIntPair(chunkX, chunkZ);
+                        if (allIntersectionBlockChunks.contains(coord)) {
+                            playersWithRerenderQueued.add(player);
                             getServer().getScheduler().scheduleSyncDelayedTask(NonEuclidPlugin.this, () -> {
                                 playersWithRerenderQueued.remove(player);
                                 if (player.isOnline()) {
