@@ -108,7 +108,13 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
                     BlockPosition position = packet.getBlockPositionModifier().read(0);
                     Location loc = position.toLocation(player.getWorld());
                     if (allIntersectionBlockLocations.contains(loc)) {
-                        event.setCancelled(true);
+                        for (Intersection intersection : intersections) {
+                            Intersection.Path path = intersection.getCurrentPlayerPaths().get(player);
+                            if (path != null && intersection.getLocations(path).contains(loc)) {
+                                event.setCancelled(true);
+                                break;
+                            }
+                        }
                     }
                 } else if (type == MULTI_BLOCK_CHANGE) {
                     MultiBlockChangeInfo[] changes = packet.getMultiBlockChangeInfoArrays().read(0);
@@ -122,18 +128,27 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
                             for (int j = 0; j < i; j++) {
                                 newChanges.add(changes[j]);
                             }
-                            i++; // skip current value
                             for (; i < changes.length; i++) {
                                 loc.setX(changes[i].getAbsoluteX());
                                 loc.setY(changes[i].getY());
                                 loc.setZ(changes[i].getAbsoluteZ());
-                                if (!allIntersectionBlockLocations.contains(loc)) {
+                                boolean skipBlock = false;
+                                if (allIntersectionBlockLocations.contains(loc)) {
+                                    for (Intersection intersection : intersections) {
+                                        Intersection.Path path = intersection.getCurrentPlayerPaths().get(player);
+                                        if (path != null && intersection.getLocations(path).contains(loc)) {
+                                            skipBlock = true;
+                                            break;
+                                        }
+                                    }
+                                }
+                                if (!skipBlock) {
                                     newChanges.add(changes[i]);
                                 }
                             }
                             if (newChanges.size() == 0) {
                                 event.setCancelled(true);
-                            } else {
+                            } else if (newChanges.size() != changes.length) {
                                 MultiBlockChangeInfo[] newChangesArray = newChanges.toArray(new MultiBlockChangeInfo[newChanges.size()]);
                                 packet.getMultiBlockChangeInfoArrays().write(0, newChangesArray);
                             }
