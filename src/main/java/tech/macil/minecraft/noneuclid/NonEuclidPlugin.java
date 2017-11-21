@@ -8,18 +8,19 @@ import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.wrappers.BlockPosition;
-import com.comphenix.protocol.wrappers.ChunkCoordIntPair;
 import com.comphenix.protocol.wrappers.MultiBlockChangeInfo;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.configuration.MemorySection;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.entity.EntityTargetLivingEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
@@ -374,6 +375,28 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
                     renderForPlayer(player, true);
                 }
             });
+        }
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onEntityTargetLivingEntity(EntityTargetLivingEntityEvent event) {
+        LivingEntity target = event.getTarget();
+        if (!(target instanceof Player)) {
+            return;
+        }
+        Location entityLocation = event.getEntity().getLocation();
+        Player player = (Player) target;
+        for (Intersection intersection : intersections) {
+            if (intersection.getPlayersInIntersection().contains(player)) {
+                Intersection.Path playerPath = intersection.getCurrentPlayerPaths().get(player);
+                assert playerPath != null;
+                Intersection.Path entityPath = intersection.getPathForLocation(entityLocation, null);
+                if (entityPath != null && entityPath != playerPath) {
+                    event.setCancelled(true);
+                }
+                // Assume player isn't in multiple intersections at once
+                break;
+            }
         }
     }
 }
