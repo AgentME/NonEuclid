@@ -8,6 +8,7 @@ import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.wrappers.BlockPosition;
+import com.comphenix.protocol.wrappers.MultiBlockChangeInfo;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -28,6 +29,7 @@ import java.util.*;
 import java.util.logging.Level;
 
 import static com.comphenix.protocol.PacketType.Play.Server.BLOCK_CHANGE;
+import static com.comphenix.protocol.PacketType.Play.Server.MULTI_BLOCK_CHANGE;
 
 public class NonEuclidPlugin extends JavaPlugin implements Listener {
     private boolean useInvisibility;
@@ -93,7 +95,7 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(this, this);
         protocolManager.addPacketListener(new PacketAdapter(this,
                 ListenerPriority.HIGHEST,
-                BLOCK_CHANGE) {
+                BLOCK_CHANGE, MULTI_BLOCK_CHANGE) {
             @Override
             public void onPacketSending(PacketEvent event) {
                 if (disablePacketRewriting) {
@@ -107,6 +109,36 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
                     Location loc = position.toLocation(player.getWorld());
                     if (allIntersectionBlockLocations.contains(loc)) {
                         event.setCancelled(true);
+                    }
+                } else if (type == MULTI_BLOCK_CHANGE) {
+                    MultiBlockChangeInfo[] changes = packet.getMultiBlockChangeInfoArrays().read(0);
+                    Location loc = new Location(player.getWorld(), 0, 0, 0);
+                    for (int i = 0; i < changes.length; i++) {
+                        loc.setX(changes[i].getAbsoluteX());
+                        loc.setY(changes[i].getY());
+                        loc.setZ(changes[i].getAbsoluteZ());
+                        if (allIntersectionBlockLocations.contains(loc)) {
+                            List<MultiBlockChangeInfo> newChanges = new ArrayList<>(changes.length);
+                            for (int j = 0; j < i; j++) {
+                                newChanges.add(changes[j]);
+                            }
+                            i++; // skip current value
+                            for (; i < changes.length; i++) {
+                                loc.setX(changes[i].getAbsoluteX());
+                                loc.setY(changes[i].getY());
+                                loc.setZ(changes[i].getAbsoluteZ());
+                                if (!allIntersectionBlockLocations.contains(loc)) {
+                                    newChanges.add(changes[i]);
+                                }
+                            }
+                            if (newChanges.size() == 0) {
+                                event.setCancelled(true);
+                            } else {
+                                MultiBlockChangeInfo[] newChangesArray = newChanges.toArray(new MultiBlockChangeInfo[newChanges.size()]);
+                                packet.getMultiBlockChangeInfoArrays().write(0, newChangesArray);
+                            }
+                            break;
+                        }
                     }
                 }
             }
