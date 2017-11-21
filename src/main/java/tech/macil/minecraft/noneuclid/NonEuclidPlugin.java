@@ -37,7 +37,7 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
     private boolean useInvisibility;
     private List<Intersection> intersections;
     private Set<Location> allIntersectionBlockLocations;
-    private Set<ChunkCoordIntPair> allIntersectionBlockChunks;
+    private Set<ChunkId> allIntersectionBlockChunks;
     private Set<Player> playersWithRerenderQueued;
     private ProtocolManager protocolManager;
 
@@ -85,7 +85,7 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
                 allIntersectionBlockLocations.addAll(intersection.getAllLocations());
                 intersection
                         .getAllLocations().stream()
-                        .map(loc -> new ChunkCoordIntPair(loc.getBlockX() >> 4, loc.getBlockZ() >> 4))
+                        .map(ChunkId::new)
                         .forEach(allIntersectionBlockChunks::add);
             } catch (Exception e) {
                 getLogger().log(Level.SEVERE, "Error parsing config locations." + entry.getKey(), e);
@@ -168,8 +168,8 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
                     if (!playersWithRerenderQueued.contains(player)) {
                         int chunkX = packet.getIntegers().read(0);
                         int chunkZ = packet.getIntegers().read(1);
-                        ChunkCoordIntPair coord = new ChunkCoordIntPair(chunkX, chunkZ);
-                        if (allIntersectionBlockChunks.contains(coord)) {
+                        ChunkId chunkId = new ChunkId(player.getWorld(), chunkX, chunkZ);
+                        if (allIntersectionBlockChunks.contains(chunkId)) {
                             playersWithRerenderQueued.add(player);
                             getServer().getScheduler().scheduleSyncDelayedTask(NonEuclidPlugin.this, () -> {
                                 playersWithRerenderQueued.remove(player);
