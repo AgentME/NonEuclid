@@ -85,9 +85,7 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
                 allIntersectionBlockLocations.addAll(intersection.getAllLocations());
                 intersection
                         .getAllLocations().stream()
-                        .map(Location::getChunk)
-                        .distinct()
-                        .map(chunk -> new ChunkCoordIntPair(chunk.getX(), chunk.getZ()))
+                        .map(loc -> new ChunkCoordIntPair(loc.getBlockX() >> 4, loc.getBlockZ() >> 4))
                         .forEach(allIntersectionBlockChunks::add);
             } catch (Exception e) {
                 getLogger().log(Level.SEVERE, "Error parsing config locations." + entry.getKey(), e);
