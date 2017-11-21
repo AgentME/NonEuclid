@@ -14,7 +14,9 @@ import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.configuration.MemorySection;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Monster;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -41,6 +43,8 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
     private Set<ChunkId> allIntersectionBlockChunks;
     private Set<Player> playersWithRerenderQueued;
     private ProtocolManager protocolManager;
+
+    private final Location tempLoc = new Location(null, 0, 0, 0);
 
     // turn this on when using player.sendBlockChange here
     private boolean disablePacketRewriting;
@@ -193,14 +197,13 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
         for (Location loc : allIntersectionBlockLocations) {
             blocks.add(loc.getBlock());
         }
-        final Location tLoc = new Location(null, 0, 0, 0);
         for (Player player : getServer().getOnlinePlayers()) {
             for (Block block : blocks) {
-                block.getLocation(tLoc);
-                if (player.getWorld() != tLoc.getWorld()) {
+                block.getLocation(tempLoc);
+                if (player.getWorld() != tempLoc.getWorld()) {
                     continue;
                 }
-                player.sendBlockChange(tLoc, block.getType(), block.getData());
+                player.sendBlockChange(tempLoc, block.getType(), block.getData());
             }
         }
         if (useInvisibility) {
@@ -258,10 +261,9 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
                 for (Location loc : intersection.getOtherLocations(newPath)) {
                     realBlocks.add(loc.getBlock());
                 }
-                Location tLoc = new Location(null, 0, 0, 0);
                 for (Block block : realBlocks) {
-                    block.getLocation(tLoc);
-                    player.sendBlockChange(tLoc, block.getType(), block.getData());
+                    block.getLocation(tempLoc);
+                    player.sendBlockChange(tempLoc, block.getType(), block.getData());
                 }
                 for (Location loc : intersection.getLocations(newPath)) {
                     player.sendBlockChange(loc, intersection.getMaterial(), (byte) 0);
@@ -280,6 +282,23 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
             boolean enteredIntersection = newInIntersection && !playersInIntersection.contains(player);
             if (enteredIntersection) {
                 playersInIntersection.add(player);
+
+                // Find any mobs nearby targeting the player that shouldn't be able to see the player
+                // and make them forget about the player.
+                for (Entity entity : player.getNearbyEntities(32, 16, 32)) {
+                    if (entity instanceof Monster) {
+                        Monster monster = (Monster) entity;
+                        if (monster.getTarget() == player) {
+                            monster.getLocation(tempLoc);
+                            tempLoc.setY(tempLoc.getY() + monster.getEyeHeight());
+
+                            Intersection.Path monsterPath = intersection.getPathForLocation(tempLoc, null);
+                            if (monsterPath != null && monsterPath != newPath) {
+                                monster.setTarget(null);
+                            }
+                        }
+                    }
+                }
             }
 
             if (useInvisibility) {
