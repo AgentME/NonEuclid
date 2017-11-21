@@ -105,28 +105,25 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
                 Player player = event.getPlayer();
                 PacketType type = event.getPacketType();
                 if (type == BLOCK_CHANGE) {
-                    getLogger().log(Level.INFO, "BLOCK CHANGE");
                     BlockPosition position = packet.getBlockPositionModifier().read(0);
                     Location loc = position.toLocation(player.getWorld());
                     if (allIntersectionBlockLocations.contains(loc)) {
                         event.setCancelled(true);
                     }
                 } else if (type == MULTI_BLOCK_CHANGE) {
-                    getLogger().log(Level.INFO, "MULTI BLOCK CHANGE");
                     MultiBlockChangeInfo[] changes = packet.getMultiBlockChangeInfoArrays().read(0);
                     Location loc = new Location(player.getWorld(), 0, 0, 0);
-                    for (int i=0; i<changes.length; i++) {
+                    for (int i = 0; i < changes.length; i++) {
                         loc.setX(changes[i].getAbsoluteX());
                         loc.setY(changes[i].getY());
                         loc.setZ(changes[i].getAbsoluteZ());
                         if (allIntersectionBlockLocations.contains(loc)) {
-                            getLogger().log(Level.INFO, "Making changes");
                             List<MultiBlockChangeInfo> newChanges = new ArrayList<>(changes.length);
-                            for (int j=0; j<i; j++) {
+                            for (int j = 0; j < i; j++) {
                                 newChanges.add(changes[j]);
                             }
                             i++; // skip current value
-                            for (; i<changes.length; i++) {
+                            for (; i < changes.length; i++) {
                                 loc.setX(changes[i].getAbsoluteX());
                                 loc.setY(changes[i].getY());
                                 loc.setZ(changes[i].getAbsoluteZ());
@@ -137,9 +134,7 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
                             if (newChanges.size() == 0) {
                                 event.setCancelled(true);
                             } else {
-                                MultiBlockChangeInfo[] newChangesArray = newChanges.toArray(changes);
-
-                                // This line triggers a ProtocolLib exception
+                                MultiBlockChangeInfo[] newChangesArray = newChanges.toArray(new MultiBlockChangeInfo[newChanges.size()]);
                                 packet.getMultiBlockChangeInfoArrays().write(0, newChangesArray);
                             }
                             break;
