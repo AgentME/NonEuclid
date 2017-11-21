@@ -18,6 +18,7 @@ public class Intersection {
     private final Path defaultPath;
     private final List<Location> northSouthLocations;
     private final List<Location> eastWestLocations;
+    private final Set<Location> allLocations = new HashSet<>();
     private final Map<Player, Path> currentPlayerPaths = new HashMap<>();
     private final Set<Player> playersInIntersection = new HashSet<>();
     private final double maxDistanceSquared;
@@ -52,6 +53,8 @@ public class Intersection {
                 }
             }
         }
+        allLocations.addAll(northSouthLocations);
+        allLocations.addAll(eastWestLocations);
     }
 
     static Location calculateAccurateCenter(Location loc, int width) {
@@ -78,6 +81,10 @@ public class Intersection {
 
     public Path getDefaultPath() {
         return defaultPath;
+    }
+
+    public Set<Location> getAllLocations() {
+        return allLocations;
     }
 
     public List<Location> getLocations(Path path) {

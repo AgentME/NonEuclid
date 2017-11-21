@@ -8,6 +8,7 @@ import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.wrappers.BlockPosition;
+import com.comphenix.protocol.wrappers.ChunkCoordIntPair;
 import com.comphenix.protocol.wrappers.MultiBlockChangeInfo;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -29,12 +30,15 @@ import java.util.*;
 import java.util.logging.Level;
 
 import static com.comphenix.protocol.PacketType.Play.Server.BLOCK_CHANGE;
+import static com.comphenix.protocol.PacketType.Play.Server.MAP_CHUNK;
 import static com.comphenix.protocol.PacketType.Play.Server.MULTI_BLOCK_CHANGE;
 
 public class NonEuclidPlugin extends JavaPlugin implements Listener {
     private boolean useInvisibility;
     private List<Intersection> intersections;
     private Set<Location> allIntersectionBlockLocations;
+    private Set<ChunkCoordIntPair> allIntersectionBlockChunks;
+    private Set<Player> playersWithRerenderQueued;
     private ProtocolManager protocolManager;
 
     // turn this on when using player.sendBlockChange here
@@ -47,6 +51,8 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
         disablePacketRewriting = false;
         intersections = new ArrayList<>();
         allIntersectionBlockLocations = new HashSet<>();
+        allIntersectionBlockChunks = new HashSet<>();
+        playersWithRerenderQueued = new HashSet<>();
         useInvisibility = getConfig().getBoolean("use_invisibility", true);
 
         int defaultMaxDistance = getConfig().getInt("max_distance");
@@ -73,11 +79,16 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
                 Intersection.Path defaultPath = Intersection.Path.valueOf(locationSection.getString("default_path", "NorthSouth"));
                 int maxDistance = locationSection.getInt("max_distance", defaultMaxDistance);
 
-                Location loc = new Location(world, x, y, z);
-                Intersection intersection = new Intersection(loc, width, height, material, defaultPath, maxDistance);
+                Location center = new Location(world, x, y, z);
+                Intersection intersection = new Intersection(center, width, height, material, defaultPath, maxDistance);
                 intersections.add(intersection);
-                allIntersectionBlockLocations.addAll(intersection.getLocations(Intersection.Path.NorthSouth));
-                allIntersectionBlockLocations.addAll(intersection.getLocations(Intersection.Path.EastWest));
+                allIntersectionBlockLocations.addAll(intersection.getAllLocations());
+                intersection
+                        .getAllLocations().stream()
+                        .map(Location::getChunk)
+                        .distinct()
+                        .map(chunk -> new ChunkCoordIntPair(chunk.getX(), chunk.getZ()))
+                        .forEach(allIntersectionBlockChunks::add);
             } catch (Exception e) {
                 getLogger().log(Level.SEVERE, "Error parsing config locations." + entry.getKey(), e);
             }
@@ -95,7 +106,7 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(this, this);
         protocolManager.addPacketListener(new PacketAdapter(this,
                 ListenerPriority.HIGHEST,
-                BLOCK_CHANGE, MULTI_BLOCK_CHANGE) {
+                BLOCK_CHANGE, MULTI_BLOCK_CHANGE, MAP_CHUNK) {
             @Override
             public void onPacketSending(PacketEvent event) {
                 if (disablePacketRewriting) {
@@ -155,6 +166,20 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
                             break;
                         }
                     }
+                } else if (type == MAP_CHUNK) {
+                    int chunkX = packet.getIntegers().read(0);
+                    int chunkZ = packet.getIntegers().read(1);
+                    ChunkCoordIntPair coord = new ChunkCoordIntPair(chunkX, chunkZ);
+                    if (allIntersectionBlockChunks.contains(coord)) {
+                        if (playersWithRerenderQueued.add(player)) {
+                            getServer().getScheduler().scheduleSyncDelayedTask(NonEuclidPlugin.this, () -> {
+                                playersWithRerenderQueued.remove(player);
+                                if (player.isOnline()) {
+                                    renderForPlayer(player, true);
+                                }
+                            });
+                        }
+                    }
                 }
             }
         });
@@ -201,6 +226,8 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
         }
         intersections = null;
         allIntersectionBlockLocations = null;
+        allIntersectionBlockChunks = null;
+        playersWithRerenderQueued = null;
     }
 
     private void renderForPlayer(Player player) {
