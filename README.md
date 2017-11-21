@@ -23,7 +23,8 @@ pathway works. The dots represent empty spots. P1 and P2 are two players.
 The center of the intersection is in the middle between the O and X characters.
 The P1 player will see walls where the X characters are. The P2 player will see
 walls where the O characters are. If P1 walks to P2's location, they will see
-the X walls disappear and the O walls appear. If instead P1 walks directly into the center, crossing the O walls (that only P2 sees), then P1 will become
+the X walls disappear and the O walls appear. If instead P1 walks directly
+into the center, crossing the O walls (that only P2 sees), then P1 will become
 invisible to P2 as long as P1 is inside of the intersection in the path
 opposite of what P2 sees.
 
