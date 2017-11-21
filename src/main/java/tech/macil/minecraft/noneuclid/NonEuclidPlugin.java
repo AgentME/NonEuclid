@@ -271,7 +271,7 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
                 disablePacketRewriting = false;
             }
 
-            boolean newInIntersection = newPath != null && intersection.isInIntersection(playerLoc, true);
+            boolean newInIntersection = newPath != null && intersection.isInIntersection(playerLoc);
             boolean exitedIntersection = playersInIntersection.contains(player) && (
                     oldPath != newPath || !newInIntersection
             );

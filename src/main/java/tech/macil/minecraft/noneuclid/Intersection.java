@@ -14,6 +14,7 @@ public class Intersection {
 
     private final Location center;
     private final int width;
+    private final int height;
     private final Material material;
     private final Path defaultPath;
     private final List<Location> northSouthLocations;
@@ -27,6 +28,7 @@ public class Intersection {
         center = calculateAccurateCenter(center, width);
         this.center = center;
         this.width = width;
+        this.height = height;
         this.material = material;
         this.defaultPath = defaultPath;
         this.maxDistanceSquared = Math.pow(maxDistance, 2);
@@ -122,7 +124,13 @@ public class Intersection {
                 center.distanceSquared(loc) < maxDistanceSquared;
     }
 
-    public boolean isInIntersection(Location loc, boolean includeWalls) {
+    public boolean isInIntersection(Location loc) {
+        return isInAboveOrBelowIntersection(loc, true) &&
+                loc.getY() >= center.getY() - 1.5 &&
+                loc.getY() <= center.getY() + height - 0.5;
+    }
+
+    private boolean isInAboveOrBelowIntersection(Location loc, boolean includeWalls) {
         double maxDistance = (double) width / 2;
         if (includeWalls) {
             maxDistance += 1;
@@ -139,7 +147,7 @@ public class Intersection {
         // If we don't have a previous path, then don't consider the walls as
         // part of the intersection, so that way players connecting will never
         // be started inside of a wall.
-        if (isInIntersection(loc, previousPath != null)) {
+        if (isInAboveOrBelowIntersection(loc, previousPath != null)) {
             return previousPath == null ? getDefaultPath() : previousPath;
         }
         boolean a1 = loc.getZ() > loc.getX() + center.getZ() - center.getX();
