@@ -173,13 +173,7 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
                         int chunkZ = packet.getIntegers().read(1);
                         ChunkId chunkId = new ChunkId(player.getWorld(), chunkX, chunkZ);
                         if (allIntersectionBlockChunks.contains(chunkId)) {
-                            playersWithRerenderQueued.add(player);
-                            getServer().getScheduler().scheduleSyncDelayedTask(NonEuclidPlugin.this, () -> {
-                                playersWithRerenderQueued.remove(player);
-                                if (player.isOnline()) {
-                                    processPlayer(player, true);
-                                }
-                            });
+                            scheduleRerenderForPlayer(player);
                         }
                     }
                 }
@@ -383,11 +377,7 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
         // Render the fake blocks in the next frame because any sent now
         // get overridden by the real chunk.
         Player player = event.getPlayer();
-        getServer().getScheduler().scheduleSyncDelayedTask(this, () -> {
-            if (player.isOnline()) {
-                processPlayer(player, true);
-            }
-        });
+        scheduleRerenderForPlayer(player);
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
@@ -399,19 +389,22 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
         }
     }
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
     public void onPlayerInteract(PlayerInteractEvent event) {
-        if (event.getAction() != Action.LEFT_CLICK_BLOCK) {
+        event.getClickedBlock().getLocation(tempLoc);
+        if (!allIntersectionBlockLocations.contains(tempLoc)) {
             return;
         }
-        Location clickedLoc = event.getClickedBlock().getLocation();
-        if (allIntersectionBlockLocations.contains(clickedLoc)) {
-            Player player = event.getPlayer();
-            getServer().getScheduler().scheduleSyncDelayedTask(this, () -> {
-                if (player.isOnline()) {
-                    processPlayer(player, true);
+        Player player = event.getPlayer();
+        for (Intersection intersection : intersections) {
+            if (intersection.getAllLocations().contains(tempLoc)) {
+                Intersection.Path playerPath = intersection.getCurrentPlayerPaths().get(player);
+                if (playerPath != null && intersection.getLocations(playerPath).contains(tempLoc)) {
+                    event.setCancelled(true);
+                    scheduleRerenderForPlayer(player);
                 }
-            });
+                break;
+            }
         }
     }
 
@@ -434,6 +427,17 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
                 // Assume player isn't in multiple intersections at once
                 break;
             }
+        }
+    }
+
+    private void scheduleRerenderForPlayer(Player player) {
+        if (playersWithRerenderQueued.add(player)) {
+            getServer().getScheduler().scheduleSyncDelayedTask(NonEuclidPlugin.this, () -> {
+                playersWithRerenderQueued.remove(player);
+                if (player.isOnline()) {
+                    processPlayer(player, true);
+                }
+            });
         }
     }
 }
