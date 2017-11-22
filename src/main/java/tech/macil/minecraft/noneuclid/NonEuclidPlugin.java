@@ -9,6 +9,7 @@ import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.wrappers.BlockPosition;
 import com.comphenix.protocol.wrappers.MultiBlockChangeInfo;
+import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -354,10 +355,10 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onPlayerMove_collisionCheck(PlayerMoveEvent event) {
-        if (event instanceof PlayerTeleportEvent) {
+        Player player = event.getPlayer();
+        if (event instanceof PlayerTeleportEvent || player.getGameMode() == GameMode.SPECTATOR) {
             return;
         }
-        Player player = event.getPlayer();
         for (Intersection intersection : intersections) {
             if (intersection.getPlayersInIntersection().contains(player)) {
                 Intersection.Path currentPath = intersection.getCurrentPlayerPaths().get(player);
