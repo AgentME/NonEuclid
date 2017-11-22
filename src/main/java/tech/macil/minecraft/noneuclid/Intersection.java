@@ -144,10 +144,7 @@ public class Intersection {
             return null;
         }
         assert loc.getWorld() == center.getWorld();
-        // If we don't have a previous path, then don't consider the walls as
-        // part of the intersection, so that way players connecting will never
-        // be started inside of a wall.
-        if (isInAboveOrBelowIntersection(loc, previousPath != null)) {
+        if (isInAboveOrBelowIntersection(loc, false)) {
             return previousPath == null ? getDefaultPath() : previousPath;
         }
         boolean a1 = loc.getZ() > loc.getX() + center.getZ() - center.getX();

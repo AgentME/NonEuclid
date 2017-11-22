@@ -23,10 +23,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.EntityTargetLivingEntityEvent;
-import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.event.player.PlayerLoginEvent;
-import org.bukkit.event.player.PlayerMoveEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.*;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.*;
@@ -104,7 +101,7 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
 
         protocolManager = ProtocolLibrary.getProtocolManager();
         for (Player player : getServer().getOnlinePlayers()) {
-            renderForPlayer(player);
+            processPlayer(player);
         }
         getServer().getPluginManager().registerEvents(this, this);
         protocolManager.addPacketListener(new PacketAdapter(this,
@@ -179,7 +176,7 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
                             getServer().getScheduler().scheduleSyncDelayedTask(NonEuclidPlugin.this, () -> {
                                 playersWithRerenderQueued.remove(player);
                                 if (player.isOnline()) {
-                                    renderForPlayer(player, true);
+                                    processPlayer(player, true);
                                 }
                             });
                         }
@@ -233,12 +230,12 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
         playersWithRerenderQueued = null;
     }
 
-    private void renderForPlayer(Player player) {
-        renderForPlayer(player, false);
+    private void processPlayer(Player player) {
+        processPlayer(player, false);
     }
 
     @SuppressWarnings("deprecation")
-    private void renderForPlayer(Player player, boolean forceRender) {
+    private void processPlayer(Player player, boolean forceRender) {
         Location playerLoc = player.getLocation();
         for (Intersection intersection : intersections) {
             Map<Player, Intersection.Path> currentPlayerPaths = intersection.getCurrentPlayerPaths();
@@ -355,9 +352,29 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
         }
     }
 
+    @EventHandler(ignoreCancelled = true)
+    public void onPlayerMove_collisionCheck(PlayerMoveEvent event) {
+        if (event instanceof PlayerTeleportEvent) {
+            return;
+        }
+        Player player = event.getPlayer();
+        for (Intersection intersection : intersections) {
+            if (intersection.getPlayersInIntersection().contains(player)) {
+                Intersection.Path currentPath = intersection.getCurrentPlayerPaths().get(player);
+                assert currentPath != null;
+                Location to = event.getTo();
+                Intersection.Path toPath = intersection.getPathForLocation(to, currentPath);
+                if (toPath != null && toPath != currentPath) {
+                    event.setCancelled(true);
+                }
+                break;
+            }
+        }
+    }
+
     @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
-    public void onPlayerMove(PlayerMoveEvent event) {
-        renderForPlayer(event.getPlayer());
+    public void onPlayerMove_process(PlayerMoveEvent event) {
+        processPlayer(event.getPlayer());
     }
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
@@ -367,7 +384,7 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
         Player player = event.getPlayer();
         getServer().getScheduler().scheduleSyncDelayedTask(this, () -> {
             if (player.isOnline()) {
-                renderForPlayer(player, true);
+                processPlayer(player, true);
             }
         });
     }
@@ -391,7 +408,7 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
             Player player = event.getPlayer();
             getServer().getScheduler().scheduleSyncDelayedTask(this, () -> {
                 if (player.isOnline()) {
-                    renderForPlayer(player, true);
+                    processPlayer(player, true);
                 }
             });
         }
