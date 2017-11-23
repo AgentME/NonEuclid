@@ -26,6 +26,7 @@ import org.bukkit.event.entity.EntityTargetLivingEntityEvent;
 import org.bukkit.event.player.*;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.logging.Level;
 
@@ -178,6 +179,13 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
                 }
             }
         });
+
+        try {
+            Metrics metrics = new Metrics(this);
+            metrics.start();
+        } catch (IOException e) {
+            // Failed to submit the stats :-(
+        }
     }
 
     @Override
