@@ -11,12 +11,10 @@ to be configured.
 
 Clients treat the wall blocks as real, but to the server the walls are only
 illusionary. They are never saved to the world file. The walls displayed by
-this plugin do not affect non-player entities. The walls may fail to block
-players from being pushed through them, or players may be able to walk through
-the walls if lag has delayed their appearance to the player, so don't expect
-this plugin to definitely keep players out of areas that you don't want them
-in. The plugin stops mobs from targeting players through the illusionary walls
-in certain cases, but they may still pathfind and walk through them.
+this plugin do not affect non-player entities including arrows and thrown
+ender pearls. The plugin stops mobs from targeting players through the
+illusionary walls in certain cases, but they may still pathfind and walk
+through them.
 
 Here's a birds-eye diagram giving a barebones example of how an overlapping
 pathway works. The dots represent empty spots. P1 and P2 are two players.
@@ -58,13 +56,6 @@ locations may be specified.
 You create an overlapping pathway by specifying the center of the intersection,
 and then the height, width, and material for the illusionary walls in the
 config.
-
-If you are using any invisibility plugins, then you should disable the
-`use_invisibility` setting so that NonEuclid doesn't ever override its effects
-and reveal players that shouldn't be revealed. However, disabling this setting
-means that a player will be able to see other players walk through walls when
-other players pass through an intersection in the opposite path than what the
-player sees.
 
 The config has a global `max_distance` setting, and individual locations may
 override it.
