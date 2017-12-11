@@ -232,7 +232,7 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
                         }
                         Intersection.Path pathPlayerPath = entry.getValue();
                         if (intersectionPlayerPath != pathPlayerPath) {
-                            pathPlayer.showPlayer(intersectionPlayer);
+                            pathPlayer.showPlayer(this, intersectionPlayer);
                         }
                     }
                 }
@@ -322,7 +322,7 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
                         }
                         Intersection.Path pathPlayerPath = entry.getValue();
                         if (oldPath != pathPlayerPath) {
-                            pathPlayer.showPlayer(player);
+                            pathPlayer.showPlayer(this, player);
                         }
                     }
                 }
@@ -338,13 +338,13 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
                         // No one in the intersection who had been on the opposing path should be
                         // hidden from player now.
                         if (oldPath != null && oldPath != intersectionPlayerPath) {
-                            player.showPlayer(intersectionPlayer);
+                            player.showPlayer(this, intersectionPlayer);
                         }
 
                         // Everyone in the intersection who is on the opposing path should be
                         // hidden from player now.
                         if (newPath != null && newPath != intersectionPlayerPath) {
-                            player.hidePlayer(intersectionPlayer);
+                            player.hidePlayer(this, intersectionPlayer);
                         }
                     }
                 }
@@ -358,7 +358,7 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
                         }
                         Intersection.Path pathPlayerPath = entry.getValue();
                         if (newPath != pathPlayerPath) {
-                            pathPlayer.hidePlayer(player);
+                            pathPlayer.hidePlayer(this, player);
                         }
                     }
                 }
