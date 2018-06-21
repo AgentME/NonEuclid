@@ -93,25 +93,6 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
             }
         }
 
-        try {
-            Metrics metrics = new Metrics(this);
-
-            // Copy the size into a variable here instead of having the metrics
-            // thread access the intersections list.
-            final int locationsCount = intersections.size();
-            Metrics.Graph locationsCountGraph = metrics.createGraph("Locations");
-            locationsCountGraph.addPlotter(new Metrics.Plotter() {
-                @Override
-                public int getValue() {
-                    return locationsCount;
-                }
-            });
-
-            metrics.start();
-        } catch (IOException e) {
-            // Failed to submit the stats :-(
-        }
-
         if (intersections.size() == 0) {
             // Don't register event listeners if nothing is configured to be used.
             return;

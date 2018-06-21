@@ -66,7 +66,3 @@ disabled. The setting may be removed.
 If a player connects to the server while standing inside of an intersection,
 then the pathway specified by the `default_path` setting will be displayed.
 This value may be "NorthSouth" or "EastWest".
-
-This plugin records some usage metrics to http://mcstats.org/ as many other
-Bukkit plugins do. You can opt out of this by placing `opt-out: true` in
-`plugins/PluginMetrics/config.yml`.
