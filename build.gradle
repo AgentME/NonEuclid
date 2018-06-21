@@ -29,14 +29,14 @@ buildscript {
     }
 
     dependencies {
-        classpath 'org.ajoberstar:gradle-git:1.6.0'
+        classpath 'org.ajoberstar:gradle-git:1.7.2'
         classpath 'net.researchgate:gradle-release:2.6.0'
     }
 }
 
 if (!project.hasProperty("gitCommitHash")) {
     try {
-        def repo = Grgit.open(dir: '.')
+        def repo = Grgit.open()
         ext.gitCommitHash = repo.head().abbreviatedId
     } catch (Exception e) {
         println "Error getting commit hash: " + e.getMessage()
