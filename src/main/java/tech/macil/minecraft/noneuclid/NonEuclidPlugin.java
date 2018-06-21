@@ -9,6 +9,7 @@ import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.wrappers.BlockPosition;
 import com.comphenix.protocol.wrappers.MultiBlockChangeInfo;
+import org.bstats.bukkit.Metrics;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -92,6 +93,9 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
                 getLogger().log(Level.SEVERE, "Error parsing config locations." + entry.getKey(), e);
             }
         }
+
+        Metrics metrics = new Metrics(this);
+        metrics.addCustomChart(new Metrics.SingleLineChart("location_count", () -> intersections.size()));
 
         if (intersections.size() == 0) {
             // Don't register event listeners if nothing is configured to be used.

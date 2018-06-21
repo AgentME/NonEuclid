@@ -66,3 +66,7 @@ disabled. The setting may be removed.
 If a player connects to the server while standing inside of an intersection,
 then the pathway specified by the `default_path` setting will be displayed.
 This value may be "NorthSouth" or "EastWest".
+
+This plugin records some usage metrics to
+https://bstats.org/plugin/bukkit/NonEuclid. You can opt out of this by
+placing `enabled: false` in `plugins/bStats/config.yml`.

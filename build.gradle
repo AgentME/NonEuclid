@@ -2,6 +2,7 @@ import org.ajoberstar.grgit.Grgit
 
 group 'tech.macil.minecraft.noneuclid'
 
+apply plugin: 'com.github.johnrengelman.shadow'
 apply plugin: 'java'
 apply plugin: 'net.researchgate.release'
 
@@ -11,10 +12,16 @@ repositories {
     mavenCentral()
     maven { url "https://hub.spigotmc.org/nexus/content/repositories/snapshots/" }
     maven { url "http://repo.dmulloy2.net/nexus/repository/public/" }
+    maven { url "http://repo.bstats.org/content/repositories/releases/" }
 }
 
 dependencies {
-    compile 'org.bukkit:bukkit:1.12.2-R0.1-SNAPSHOT'
+    def bukkitDep = 'org.bukkit:bukkit:1.12.2-R0.1-SNAPSHOT'
+    compileOnly bukkitDep // use compileOnly so shadowJar doesn't consider this a dep to bundle
+    testCompile bukkitDep // but include the dep when running tests.
+
+    compile 'org.bstats:bstats-bukkit:1.2'
+
     compileOnly group: "com.comphenix.protocol", name: "ProtocolLib", version: "4.4.0-SNAPSHOT"
     testCompile group: 'junit', name: 'junit', version: '4.12'
     testCompile "org.mockito:mockito-core:2.+"
@@ -22,13 +29,13 @@ dependencies {
 
 buildscript {
     repositories {
+        jcenter()
         mavenCentral()
-        maven {
-            url 'https://plugins.gradle.org/m2/'
-        }
+        maven { url "https://plugins.gradle.org/m2/" }
     }
 
     dependencies {
+        classpath 'com.github.jengelman.gradle.plugins:shadow:2.0.4'
         classpath 'org.ajoberstar:gradle-git:1.7.2'
         classpath 'net.researchgate:gradle-release:2.6.0'
     }
@@ -47,7 +54,17 @@ if (!project.hasProperty("gitCommitHash")) {
 }
 
 ext.internalVersion = version + ";" + gitCommitHash
-jar.archiveName = rootProject.name + '.jar'
+
+shadowJar {
+    relocate 'org.bstats', 'tech.macil.minecraft.noneuclid.shadow.org.bstats'
+
+    // don't include version and classifier in jar name
+    classifier = null
+    version = null
+}
+
+jar.enabled = false
+assemble.dependsOn shadowJar
 
 processResources {
     inputs.property("version", project.internalVersion)
