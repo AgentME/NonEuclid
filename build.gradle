@@ -54,7 +54,7 @@ if (!project.hasProperty("gitCommitHash")) {
 ext.internalVersion = version + ";" + gitCommitHash
 
 shadowJar {
-    relocate 'org.bstats', 'tech.macil.minecraft.noneuclid.shadow.org.bstats'
+    relocate 'org.bstats', "${project.group}.shadow.org.bstats"
 
     dependencies {
         include(dependency('org.bstats:bstats-bukkit'))
@@ -71,12 +71,12 @@ assemble.dependsOn shadowJar
 processResources {
     inputs.property("version", project.internalVersion)
 
-    from (sourceSets.main.resources.srcDirs) {
+    from(sourceSets.main.resources.srcDirs) {
         expand 'internalVersion': project.internalVersion
         include 'plugin.yml'
     }
 
-    from (sourceSets.main.resources.srcDirs) {
+    from(sourceSets.main.resources.srcDirs) {
         exclude 'plugin.yml'
     }
 }
