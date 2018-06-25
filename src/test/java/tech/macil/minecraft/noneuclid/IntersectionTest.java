@@ -3,9 +3,9 @@ package tech.macil.minecraft.noneuclid;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 public class IntersectionTest {

@@ -16,13 +16,20 @@ repositories {
 }
 
 dependencies {
-    implementation 'org.bukkit:bukkit:1.12.2-R0.1-SNAPSHOT'
+    implementation('org.bukkit:bukkit:1.12.2-R0.1-SNAPSHOT') {
+        exclude group: 'junit', module: 'junit'
+    }
     implementation 'org.bstats:bstats-bukkit:1.2'
 
     compileOnly group: "com.comphenix.protocol", name: "ProtocolLib", version: "4.4.0-SNAPSHOT"
 
-    testCompile 'junit:junit:4.12'
-    testCompile "org.mockito:mockito-core:2.+"
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.2.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.2.0'
+    testImplementation 'org.mockito:mockito-core:2.+'
+}
+
+test {
+    useJUnitPlatform()
 }
 
 buildscript {
