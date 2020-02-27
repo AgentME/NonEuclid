@@ -1,11 +1,11 @@
 # NonEuclid
 
-[![Circle CI](https://circleci.com/gh/AgentME/NonEuclid.svg?style=shield)](https://circleci.com/gh/AgentME/NonEuclid)
+[![Circle CI](https://circleci.com/gh/Macil/NonEuclid.svg?style=shield)](https://circleci.com/gh/Macil/NonEuclid)
 
 This is a Bukkit plugin for Minecraft servers that allows overlapping pathways
 to be configured.
 
-[![Demonstration video](extra/noneuclid.gif)](https://raw.githubusercontent.com/AgentME/NonEuclid/master/extra/noneuclid.webm)
+[![Demonstration video](extra/noneuclid.gif)](https://raw.githubusercontent.com/Macil/NonEuclid/master/extra/noneuclid.webm)
 
 *Click for a higher-quality video clip*
 
@@ -44,7 +44,7 @@ This plugin depends on
 download its jar and place it in your plugins/ directory.
 
 Download the latest NonEuclid jar file from the
-[project's Releases page](https://github.com/AgentME/NonEuclid/releases).
+[project's Releases page](https://github.com/Macil/NonEuclid/releases).
 Place the jar file in the plugins/ directory. After the first run, the file
 plugins/NonEuclid/config.yml file will be generated with default values.
 
