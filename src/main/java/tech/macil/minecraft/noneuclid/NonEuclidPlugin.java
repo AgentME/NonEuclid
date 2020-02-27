@@ -94,7 +94,7 @@ public class NonEuclidPlugin extends JavaPlugin implements Listener {
             }
         }
 
-        Metrics metrics = new Metrics(this);
+        Metrics metrics = new Metrics(this, 2743);
         metrics.addCustomChart(new Metrics.SingleLineChart("location_count", () -> intersections.size()));
 
         if (intersections.size() == 0) {

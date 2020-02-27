@@ -12,14 +12,14 @@ repositories {
     mavenCentral()
     maven { url "https://hub.spigotmc.org/nexus/content/repositories/snapshots/" }
     maven { url "http://repo.dmulloy2.net/nexus/repository/public/" }
-    maven { url "http://repo.bstats.org/content/repositories/releases/" }
+    maven { url "https://repo.codemc.org/repository/maven-public" }
 }
 
 dependencies {
     implementation('org.bukkit:bukkit:1.12.2-R0.1-SNAPSHOT') {
         exclude group: 'junit', module: 'junit'
     }
-    implementation 'org.bstats:bstats-bukkit:1.2'
+    implementation 'org.bstats:bstats-bukkit:1.7'
 
     compileOnly group: "com.comphenix.protocol", name: "ProtocolLib", version: "4.4.0"
 
